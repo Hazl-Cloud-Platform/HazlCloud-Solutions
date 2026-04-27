@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Home } from 'lucide-react'
 import { LogoMark } from '@/components/LogoMark'
 
 export default function ApproachPage() {
+  const [contactInView, setContactInView] = useState(false)
+
   useEffect(() => {
     const io = new IntersectionObserver(
       (entries) => {
@@ -19,8 +21,27 @@ export default function ApproachPage() {
       { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
     )
     document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
-    return () => io.disconnect()
+
+    const contactEl = document.getElementById('contact')
+    let contactIo: IntersectionObserver | null = null
+    if (contactEl) {
+      contactIo = new IntersectionObserver(
+        ([entry]) => setContactInView(entry.isIntersecting),
+        { threshold: 0.35 }
+      )
+      contactIo.observe(contactEl)
+    }
+
+    return () => {
+      io.disconnect()
+      contactIo?.disconnect()
+    }
   }, [])
+
+  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <>
@@ -32,8 +53,11 @@ export default function ApproachPage() {
           <span className="approach-logo-sub">Solutions</span>
         </Link>
         <nav className="approach-nav-links">
-          <Link href="/approach" className="active">Approach</Link>
-          <a href="#contact">Contact</a>
+          <Link href="/" className="approach-home" aria-label="Home">
+            <Home size={16} strokeWidth={1.5} />
+          </Link>
+          <Link href="/approach" className={contactInView ? '' : 'active'}>Approach</Link>
+          <a href="#contact" onClick={handleContactClick} className={contactInView ? 'active' : ''}>Contact</a>
         </nav>
       </header>
 
@@ -41,23 +65,58 @@ export default function ApproachPage() {
 
         {/* 1. Opening */}
         <section className="approach-section opening reveal">
-          <div className="eyebrow">Our approach</div>
           <h1 className="approach-h1">
             Most teams build.
-            <span className="muted"> Few know how to run.</span>
+            <br />
+            <span className="muted">Few know how to run.</span>
           </h1>
-          <p className="lead">AI made building easy. Running software at scale is where things break.</p>
         </section>
 
-        {/* 2. Dev vs Ops gap */}
+        {/* 2. About us */}
+        <section className="approach-section reveal">
+          <div className="eyebrow">About us</div>
+          <div className="about-grid">
+            <div className="about-copy">
+              <h2 className="approach-h2">We build software with an operator&apos;s mindset.</h2>
+              <p className="lead about-lead">
+                We help teams deliver software. Our specialty is the operations side of the business: cloud,
+                infrastructure, observability, uptime, recovery, and the day-to-day systems work that keeps production
+                stable.
+              </p>
+            </div>
+
+            <div className="about-card">
+              <div className="about-card-label">Our proprietary platform</div>
+              <h3 className="approach-h3">HazlCloud gives IT and infrastructure teams control of what they run.</h3>
+              <p>
+                Our proprietary platform helps technical professionals manage infrastructure, reduce operational blind spots, and
+                make sure the solutions they support continue to operate as expected.
+              </p>
+              <div className="about-cta-row">
+                <span className="about-cta-prompt">If you are a technical professional:</span>
+                <a href="https://hazlcloud.com" target="_blank" rel="noreferrer" className="about-link">
+                  Explore HAZL Cloud
+                  <ArrowRight size={16} />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. Dev vs Ops gap */}
         <section className="approach-section reveal">
           <div className="eyebrow">The gap nobody talks about</div>
           <h2 className="approach-h2">Dev is solved. Ops is where products fail.</h2>
+          <p className="lead">
+            <strong>Dev</strong> (development) is building the product - writing the code, shipping features, getting the demo working.
+            <br />
+            <strong>Ops</strong> (operations) is everything that keeps it alive once real users arrive - uptime, security, backups, performance, recovery when things go wrong.
+          </p>
 
           <div className="gap-grid">
             <div className="gap-col dev">
-              <span className="gap-label">Dev — easy now</span>
-              <span className="gap-title">AI builds the MVP</span>
+              <span className="gap-label">Dev (build) - easy now</span>
+              <span className="gap-title">AI builds the MVP/prototype</span>
               <ul>
                 {[
                   'MVP shipped in days',
@@ -74,13 +133,13 @@ export default function ApproachPage() {
             </div>
             <div className="gap-divider" />
             <div className="gap-col ops">
-              <span className="gap-label">Ops — overlooked</span>
+              <span className="gap-label">Ops (run) - overlooked</span>
               <span className="gap-title">…then real users show up</span>
               <ul>
                 {[
-                  "No monitoring — you'll find out from an angry user",
-                  'No backups — one bad query and data is gone',
-                  'Security gaps — keys in the open, database exposed',
+                  "No monitoring - you'll find out from an angry user",
+                  'No backups - one bad query and data is gone',
+                  'Security gaps - keys in the open, database exposed',
                   'Slow performance under real load',
                   'Crashes when traffic spikes',
                 ].map((item) => (
@@ -99,24 +158,28 @@ export default function ApproachPage() {
           </div>
         </section>
 
-        {/* 3. Approach steps */}
+        {/* 4. Approach steps */}
         <section className="approach-section reveal">
           <div className="eyebrow">How we work</div>
-          <h2 className="approach-h2">We focus on the part most teams ignore: Ops.</h2>
+          <h2 className="approach-h2" style={{ maxWidth: 'none', textWrap: 'nowrap' }}>
+            We focus on the part
+            <br />
+            most teams ignore: Operations.
+          </h2>
 
           <div className="steps">
             {[
               {
-                num: 'Step 01 — Assess',
+                num: 'Step 01 - Assess',
                 title: "Understand what you've built",
                 items: [
                   'Full review of your current system',
                   'Map every risk and weak point',
-                  'Plain-language report — no jargon',
+                  'Plain-language report - no jargon',
                 ],
               },
               {
-                num: 'Step 02 — Stabilize',
+                num: 'Step 02 - Stabilize',
                 title: 'Stop the bleeding',
                 items: [
                   'Fix the crashes and instability',
@@ -125,7 +188,7 @@ export default function ApproachPage() {
                 ],
               },
               {
-                num: 'Step 03 — Scale',
+                num: 'Step 03 - Scale',
                 title: 'Ready it for growth',
                 items: [
                   'Performance under real load',
@@ -152,17 +215,17 @@ export default function ApproachPage() {
           </div>
         </section>
 
-        {/* 4. Capability cards */}
+        {/* 5. Capability cards */}
         <section className="approach-section reveal">
           <div className="eyebrow">What we actually do</div>
           <h2 className="approach-h2">Five things that keep your product alive.</h2>
 
           <div className="caps">
             {[
-              { title: 'Reliability',      desc: "Your system stays up — and you're the first to know if anything wobbles.", icon: <ReliabilityIcon /> },
-              { title: 'Security',         desc: 'Keys locked down, data protected, users safe — not an afterthought.',      icon: <SecurityIcon /> },
+              { title: 'Reliability',      desc: "Your system stays up - and you're the first to know if anything wobbles.", icon: <ReliabilityIcon /> },
+              { title: 'Security',         desc: 'Keys locked down, data protected, users safe - not an afterthought.',      icon: <SecurityIcon /> },
               { title: 'Performance',      desc: 'Pages load fast. Actions feel instant. Users actually stick around.',        icon: <PerformanceIcon /> },
-              { title: 'Scalability',      desc: 'Handle 10 users or 100,000 — without rewriting from scratch.',              icon: <ScalabilityIcon /> },
+              { title: 'Scalability',      desc: 'Handle 10 users or 100,000 - without rewriting from scratch.',              icon: <ScalabilityIcon /> },
               { title: 'Ongoing Support',  desc: 'We stay on the line. As you grow, we keep your foundation solid.',          icon: <SupportIcon /> },
             ].map(({ title, desc, icon }) => (
               <div key={title} className="cap">
@@ -174,7 +237,7 @@ export default function ApproachPage() {
           </div>
         </section>
 
-        {/* 5. Team */}
+        {/* 6. Team */}
         <section className="approach-section reveal">
           <div className="eyebrow">Who you&apos;re working with</div>
           <h2 className="approach-h2">Built by operators, not just developers.</h2>
@@ -205,7 +268,7 @@ export default function ApproachPage() {
           </div>
         </section>
 
-        {/* 6. Partnership */}
+        {/* 7. Partnership */}
         <section className="approach-section reveal">
           <div className="eyebrow">After launch</div>
           <h2 className="approach-h2">We stay with you.</h2>
@@ -215,7 +278,7 @@ export default function ApproachPage() {
               'Ongoing support and maintenance',
               'Continuous improvements',
               'Technical guidance as you grow',
-              'Long-term technical partner — not a vendor',
+              'Long-term technical partner - not a vendor',
             ].map((item) => (
               <li key={item}>
                 <span className="check-icon"><SmallCheckIcon /></span>
@@ -225,7 +288,7 @@ export default function ApproachPage() {
           </ul>
         </section>
 
-        {/* 7. Flow diagram */}
+        {/* 8. Flow diagram */}
         <section className="approach-section reveal">
           <div className="eyebrow">From start to scale</div>
           <h2 className="approach-h2">From prototype to production-ready.</h2>
@@ -258,14 +321,14 @@ export default function ApproachPage() {
 
         {/* End CTA */}
         <div className="end-cta reveal" id="contact">
-          <div className="eyebrow">Ready when you are</div>
+          <div className="eyebrow">Contact us! Ready when you are.</div>
           <h2 className="approach-h2" style={{ maxWidth: 'none', textAlign: 'center', fontSize: 'clamp(28px, 3.6vw, 42px)' }}>
             Let&apos;s make your product survive its first real users.
           </h2>
           <p>
-            Send us what you&apos;ve built. We&apos;ll tell you exactly what&apos;s going to break first — and what it takes to fix it.
+            Send us what you&apos;ve built. We&apos;ll tell you exactly what&apos;s going to break first - and what it takes to fix it.
           </p>
-          <a className="pill-cta" href="#">
+          <a className="pill-cta" href="https://calendly.com/anthony-tam-hazl/30min" target="_blank" rel="noreferrer">
             Turn My MVP Into a Real Product
             <ArrowRight size={16} />
           </a>

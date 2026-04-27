@@ -4,12 +4,12 @@ const PROBLEMS = [
   {
     icon: AlertTriangle,
     title: 'Your app crashes when users actually show up',
-    body: 'AI tools build something that works for one person. Real traffic, real edge cases, real concurrent users — that is a different problem. Most MVPs go down within their first 30 days of real use.',
+    body: 'AI tools build something that works for one person. Real traffic, real edge cases, real concurrent users - that is a different problem. Most MVPs go down within their first 30 days of real use.',
   },
   {
     icon: ShieldOff,
     title: 'It is not secure, and you would not know if it were hacked',
-    body: 'Default AI scaffolding ships with the API keys exposed, the database open, and no logging. The first sign of trouble is usually an angry email from a user — or a stranger in your data.',
+    body: 'Default AI scaffolding ships with the API keys exposed, the database open, and no logging. The first sign of trouble is usually an angry email from a user - or a stranger in your data.',
   },
   {
     icon: Gauge,
@@ -63,7 +63,7 @@ export function ProblemSection() {
             className="text-xl md:text-2xl text-white max-w-2xl leading-snug"
             style={{ letterSpacing: '-0.02em' }}
           >
-            We turn fragile prototypes into reliable, scalable businesses — without rewriting from scratch.
+            We turn fragile prototypes into reliable, scalable businesses - without rewriting from scratch.
           </p>
           <a
             href="/approach"

@@ -16,7 +16,7 @@ export function Navbar() {
           className="animate-blur-fade-up flex items-center gap-2.5 select-none"
           style={{ animationDelay: '0ms' }}
         >
-          <LogoMark className="w-8 h-8 md:w-9 md:h-9 [filter:invert(1)]" />
+          <LogoMark className="w-8 h-8 md:w-9 md:h-9" />
           <span className="text-white font-semibold tracking-[-0.04em] text-2xl md:text-[28px] leading-none">
             HAZL
           </span>
@@ -25,7 +25,7 @@ export function Navbar() {
           </span>
         </a>
 
-        {/* hamburger — only below lg, hidden by design but wired for mobile */}
+        {/* hamburger - only below lg, hidden by design but wired for mobile */}
         <button
           aria-label="Toggle menu"
           onClick={() => setMenuOpen((v) => !v)}

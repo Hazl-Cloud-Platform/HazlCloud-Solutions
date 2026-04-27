@@ -7,6 +7,7 @@ interface PrimaryButtonProps {
   delay?: number
   className?: string
   onClick?: () => void
+  href?: string
 }
 
 export function PrimaryButton({
@@ -16,16 +17,38 @@ export function PrimaryButton({
   delay = 0,
   className = '',
   onClick,
+  href,
 }: PrimaryButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`bg-white text-black rounded-full font-medium px-6 sm:px-8 py-3 sm:py-3.5 inline-flex items-center gap-2 hover:bg-gray-200 transition-colors animate-blur-fade-up ${className}`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
+  const sharedClass = `bg-white text-black rounded-full font-medium px-6 sm:px-8 py-3 sm:py-3.5 inline-flex items-center gap-2 hover:bg-gray-200 transition-colors animate-blur-fade-up ${className}`
+  const inner = (
+    <>
       {!iconRight && Icon && <Icon size={18} strokeWidth={2.2} />}
       <span>{children}</span>
       {iconRight && Icon && <Icon size={18} strokeWidth={2.2} />}
+    </>
+  )
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={sharedClass}
+        style={{ animationDelay: `${delay}ms` }}
+      >
+        {inner}
+      </a>
+    )
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={sharedClass}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {inner}
     </button>
   )
 }
