@@ -321,8 +321,8 @@ export default function ApproachPage() {
 
         {/* End CTA */}
         <div className="end-cta reveal" id="contact">
-          <div className="eyebrow">Contact us! Ready when you are.</div>
-          <h2 className="approach-h2" style={{ maxWidth: 'none', textAlign: 'center', fontSize: 'clamp(28px, 3.6vw, 42px)' }}>
+          <div className="end-cta-headline">Contact us! Ready when you are.</div>
+          <h2 className="approach-h2" style={{ maxWidth: 'none', textAlign: 'left', fontSize: 'clamp(28px, 3.6vw, 42px)' }}>
             Let&apos;s make your product survive its first real users.
           </h2>
           <p>
