@@ -58,6 +58,7 @@ export default function ApproachPage() {
           </Link>
           <Link href="/approach" className={contactInView ? '' : 'active'}>Approach</Link>
           <a href="#contact" onClick={handleContactClick} className={contactInView ? 'active' : ''}>Contact</a>
+          <Link href="/insights">News</Link>
         </nav>
       </header>
 
@@ -307,7 +308,7 @@ export default function ApproachPage() {
               <div className="flow-arrow"><ArrowRightSmIcon /></div>
               <div className="flow-node hazl-node">
                 <LogoMark className="flow-logo" />
-                <span className="flow-name">HAZL takes over Ops</span>
+                <span className="flow-name">HAZL works with you on development & operations</span>
               </div>
               <div className="flow-arrow"><ArrowRightSmIcon /></div>
               <div className="flow-node output-node">

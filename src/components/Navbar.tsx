@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import Link from 'next/link'
+import { Menu, X, Newspaper } from 'lucide-react'
 import { LogoMark } from './LogoMark'
 import { MobileMenu } from './MobileMenu'
 
@@ -24,6 +25,17 @@ export function Navbar() {
             Solutions
           </span>
         </a>
+
+        <div className="hidden lg:flex items-center gap-6 text-sm text-white/85">
+          <Link
+            href="/insights"
+            aria-label="Insights"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/25 text-white transition-colors animate-blur-fade-up"
+            style={{ animationDelay: '200ms' }}
+          >
+            <Newspaper size={18} strokeWidth={1.6} />
+          </Link>
+        </div>
 
         {/* hamburger - only below lg, hidden by design but wired for mobile */}
         <button

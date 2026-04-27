@@ -4,7 +4,8 @@ import Link from 'next/link'
 
 const NAV_LINKS = [
   { label: 'Approach', href: '/approach' },
-  { label: 'Contact',  href: '#contact' },
+  { label: 'Insights', href: '/insights' },
+  { label: 'Contact',  href: '/approach#contact' },
 ]
 
 export function MobileMenu({ open }: { open: boolean }) {

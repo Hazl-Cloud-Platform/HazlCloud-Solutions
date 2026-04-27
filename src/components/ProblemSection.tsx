@@ -25,7 +25,7 @@ const PROBLEMS = [
 
 export function ProblemSection() {
   return (
-    <section className="relative bg-black text-white px-4 sm:px-6 md:px-12 py-20 md:py-32">
+    <section id="problems" className="relative bg-black text-white px-4 sm:px-6 md:px-12 py-20 md:py-32 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <div className="mb-14 md:mb-20 max-w-3xl">
           <div className="text-xs font-medium tracking-[0.18em] uppercase text-gray-500 mb-5">

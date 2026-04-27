@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, ChevronDown } from 'lucide-react'
 import { Navbar } from './Navbar'
 import { PrimaryButton } from './Buttons'
 import { GlassPillWithIcon } from './Buttons'
@@ -55,6 +55,16 @@ export function Hero() {
           </div>
         </div>
       </div>
+
+      {/* Scroll-down hint */}
+      <a
+        href="#problems"
+        aria-label="Scroll to learn more"
+        className="hero-scroll-hint absolute left-1/2 -translate-x-1/2 bottom-5 md:bottom-7 z-20 inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/20 bg-white/[0.04] hover:bg-white/[0.10] hover:border-white/35 text-white/85 hover:text-white transition-colors animate-blur-fade-up"
+        style={{ animationDelay: '900ms' }}
+      >
+        <ChevronDown size={20} strokeWidth={1.6} />
+      </a>
     </section>
   )
 }

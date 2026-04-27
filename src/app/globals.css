@@ -283,7 +283,6 @@ html, body {
   color: #b5b5b5;
   line-height: 1.55;
   margin-top: 28px;
-  text-wrap: nowrap;
 }
 .opening .lead,
 .about-lead,
@@ -745,4 +744,149 @@ html, body {
   .caps { grid-template-columns: 1fr; }
   .approach-main { padding: 0 18px 80px; }
   .approach-section { padding: 56px 0; }
+}
+
+/* ─── Hero scroll hint ─────────────────────────────────────────────────────── */
+.hero-scroll-hint {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-decoration: none;
+}
+.hero-scroll-hint > svg {
+  animation: heroScrollHintBob 1.8s ease-in-out infinite;
+}
+@keyframes heroScrollHintBob {
+  0%, 100% { transform: translateY(0); opacity: 0.85; }
+  50%      { transform: translateY(4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-hint > svg { animation: none; }
+}
+
+/* ─── Insights ─────────────────────────────────────────────────────────────── */
+.insights-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.insight-card {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 55%),
+    rgba(255,255,255,0.02);
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.insight-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
+.insight-card-link { display: block; text-decoration: none; color: inherit; padding: 0; }
+.insight-cover {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  background: rgba(255,255,255,0.04);
+}
+.insight-card-link > .insight-meta,
+.insight-card-link > .insight-title,
+.insight-card-link > .insight-excerpt,
+.insight-card-link > .insight-tags { padding-left: 24px; padding-right: 24px; }
+.insight-card-link > .insight-meta { padding-top: 22px; }
+.insight-card-link > .insight-tags { padding-bottom: 22px; }
+.insight-meta {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b6b6b;
+  margin-bottom: 10px;
+}
+.insight-title {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: white;
+}
+.insight-excerpt {
+  color: #b5b5b5;
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+.insight-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.insight-tag {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b5b5b5;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.insight-article { max-width: 760px; margin: 0 auto; padding-top: 40px; }
+.insight-article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+.insight-back { color: #b5b5b5; text-decoration: none; }
+.insight-back:hover { color: white; }
+.insight-hero-image {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  margin: 32px 0 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.insight-body { font-size: 17px; line-height: 1.75; color: #d1d5db; }
+.insight-paragraph { margin: 18px 0; }
+.insight-quote {
+  border-left: 2px solid rgba(255,255,255,0.3);
+  padding: 4px 0 4px 18px;
+  margin: 24px 0;
+  color: #e5e7eb;
+  font-style: italic;
+}
+.insight-link { color: #f4d35e; text-decoration: underline; text-underline-offset: 3px; }
+.insight-inline-code {
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.insight-codeblock {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 22px 0;
+}
+.insight-body-image {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 22px 0;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.insight-article-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.10);
+}
+
+@media (max-width: 820px) {
+  .insights-grid { grid-template-columns: 1fr; }
+  .insight-cover { height: 200px; }
 }

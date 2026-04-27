@@ -40,6 +40,10 @@ export const metadata: Metadata = {
     'technical partner',
     'fractional CTO',
     'platform engineering',
+    'AI development',
+    'technical consulting',
+    'software development partner',
+    'SRE',
   ],
   category: 'technology',
   formatDetection: {
