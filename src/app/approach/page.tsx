@@ -87,10 +87,18 @@ export default function ApproachPage() {
             </div>
 
             <div className="about-card">
-              <div className="about-card-label">Our proprietary platform</div>
+              <div className="about-card-label">
+                Our proprietary platform
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/hazlCloud-logo-png.png"
+                  alt="HazlCloud"
+                  className="about-card-label-logo"
+                />
+              </div>
               <h3 className="approach-h3">HazlCloud gives IT and infrastructure teams control of what they run.</h3>
               <p>
-                Our proprietary platform helps technical professionals manage infrastructure, reduce operational blind spots, and
+                Our <strong>proprietary</strong> platform helps technical professionals manage infrastructure, reduce operational blind spots, and
                 make sure the solutions they support continue to operate as expected.
               </p>
               <div className="about-cta-row">
