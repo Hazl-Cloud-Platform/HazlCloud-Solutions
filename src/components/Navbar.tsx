@@ -17,11 +17,11 @@ export function Navbar() {
           className="animate-blur-fade-up flex items-center gap-2.5 select-none"
           style={{ animationDelay: '0ms' }}
         >
-          <LogoMark className="w-8 h-8 md:w-9 md:h-9" />
+          <LogoMark className="w-12 h-12 md:w-14 md:h-14" />
           <span className="text-white font-semibold tracking-[-0.04em] text-2xl md:text-[28px] leading-none">
             HAZL
           </span>
-          <span className="text-white/50 text-[10px] md:text-xs tracking-[0.2em] uppercase">
+          <span className="text-white/50 font-semibold tracking-[-0.04em] text-2xl md:text-[28px] leading-none uppercase">
             Solutions
           </span>
         </a>
@@ -30,10 +30,10 @@ export function Navbar() {
           <Link
             href="/insights"
             aria-label="Insights"
-            className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/25 text-white transition-colors animate-blur-fade-up"
+            className="inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/25 text-white transition-colors animate-blur-fade-up"
             style={{ animationDelay: '200ms' }}
           >
-            <Newspaper size={18} strokeWidth={1.6} />
+            <Newspaper size={24} strokeWidth={1.6} />
           </Link>
         </div>
 
