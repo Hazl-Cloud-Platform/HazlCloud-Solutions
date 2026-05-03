@@ -185,18 +185,20 @@ html, body {
   text-decoration: none;
   color: inherit;
 }
-.approach-logo-mark { width: 36px; height: 36px; }
+.approach-logo-mark { width: 56px; height: 56px; }
 .approach-logo-word {
   font-weight: 600;
-  font-size: 26px;
+  font-size: 28px;
   letter-spacing: -0.04em;
   line-height: 1;
   color: white;
 }
 .approach-logo-sub {
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  line-height: 1;
   color: rgba(255,255,255,0.5);
-  font-size: 11px;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 .approach-nav-links { display: flex; gap: 32px; align-items: center; }
