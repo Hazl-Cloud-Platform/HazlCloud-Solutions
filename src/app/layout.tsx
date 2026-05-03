@@ -94,9 +94,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/brand/hazlCloud-logo-bw2.png',
-    shortcut: '/brand/hazlCloud-logo-bw2.png',
-    apple: '/brand/hazlCloud-logo-bw2.png',
+    icon: '/brand/favicon.png',
+    shortcut: '/brand/favicon.png',
+    apple: '/brand/favicon.png',
   },
 }
 

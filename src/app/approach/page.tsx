@@ -96,7 +96,7 @@ export default function ApproachPage() {
                   className="about-card-label-logo"
                 />
               </div>
-              <h3 className="approach-h3">HazlCloud gives IT and infrastructure teams control of what they run.</h3>
+              <h3 className="approach-h3">HAZL Cloud gives IT and infrastructure teams control of what they run.</h3>
               <p>
                 Our <strong>proprietary</strong> platform helps technical professionals manage infrastructure, reduce operational blind spots, and
                 make sure the solutions they support continue to operate as expected.
