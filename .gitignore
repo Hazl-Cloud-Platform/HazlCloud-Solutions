@@ -63,3 +63,6 @@ ds-bundle/
 .design-sync/node_modules
 .design-sync/compiled.css
 .design-sync/.tw.css
+
+# local-only source assets — the served copies live in public/brand/partners/
+/Logos/
