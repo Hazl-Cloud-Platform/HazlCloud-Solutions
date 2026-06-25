@@ -172,7 +172,7 @@ export default async function InsightArticlePage({ params }: { params: { slug: s
         </nav>
       </header>
 
-      <main className="approach-main">
+      <main id="main-content" className="approach-main">
         <article className="insight-article">
           <div className="insight-article-meta">
             <Link href="/insights" className="insight-back">← All insights</Link>
