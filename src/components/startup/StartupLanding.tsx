@@ -486,7 +486,7 @@ export function StartupLanding() {
       >
         <div style={{ maxWidth: 1160, margin: '0 auto', padding: '64px 32px' }}>
           <div style={EYEBROW}>03 — What we can build</div>
-          <h2 style={{ ...SECTION_H2, margin: '16px 0 8px' }}>If customers can pay for it, we can build it.</h2>
+          <h2 style={{ ...SECTION_H2, margin: '16px 0 8px' }}>If your customers can pay for it, we can build it.</h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.6)', margin: '0 0 36px', maxWidth: 560 }}>
             A few of the products founders launch with us. Not sure which fits? That’s the first
             conversation.
