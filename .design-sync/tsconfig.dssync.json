@@ -1,0 +1,11 @@
+{
+  "comment": "Used by design-sync's esbuild bundling (cfg.tsconfig). baseUrl is this dir (.design-sync). Aliases next/link to a passthrough shim and re-points the repo's @/ alias at ../src.",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["../src/*"],
+      "next/link": ["./shims/next-link.tsx"]
+    }
+  }
+}

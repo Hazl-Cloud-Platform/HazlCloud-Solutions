@@ -1,0 +1,37 @@
+{
+  "projectId": "019dc633-17a9-7cdd-89f2-323cf347e723",
+  "pkg": "hazl-solutions",
+  "globalName": "HAZL",
+  "shape": "package",
+  "srcDir": "src/components",
+  "tsconfig": ".design-sync/tsconfig.dssync.json",
+  "cssEntry": ".design-sync/compiled.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "componentSrcMap": {
+    "PrimaryButton": "src/components/Buttons.tsx",
+    "GlassPillWithIcon": "src/components/Buttons.tsx",
+    "Hero": "src/components/Hero.tsx",
+    "LogoMark": "src/components/LogoMark.tsx",
+    "MobileMenu": "src/components/MobileMenu.tsx",
+    "Navbar": "src/components/Navbar.tsx",
+    "ProblemSection": "src/components/ProblemSection.tsx",
+    "ServicesStrip": "src/components/ServicesStrip.tsx"
+  },
+  "dtsPropsFor": {
+    "PrimaryButton": "children: React.ReactNode; icon?: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; iconRight?: boolean; delay?: number; className?: string; onClick?: () => void; href?: string",
+    "GlassPillWithIcon": "children: React.ReactNode; icon?: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; iconRight?: boolean; delay?: number; className?: string; href?: string; onClick?: () => void",
+    "LogoMark": "className?: string",
+    "ServicesStrip": "delay?: number",
+    "MobileMenu": "open: boolean"
+  },
+  "overrides": {
+    "PrimaryButton": { "cardMode": "single", "primaryStory": "Variants", "viewport": "1120x150" },
+    "GlassPillWithIcon": { "cardMode": "single", "primaryStory": "Variants", "viewport": "980x150" },
+    "LogoMark": { "cardMode": "single", "primaryStory": "Logo", "viewport": "320x150" },
+    "Hero": { "cardMode": "single", "primaryStory": "Default", "viewport": "1100x680" },
+    "Navbar": { "cardMode": "single", "primaryStory": "Default", "viewport": "1280x120" },
+    "ServicesStrip": { "cardMode": "single", "primaryStory": "Default", "viewport": "980x215" },
+    "ProblemSection": { "cardMode": "single", "primaryStory": "Default", "viewport": "1000x760" },
+    "MobileMenu": { "cardMode": "single", "primaryStory": "Open", "viewport": "440x380" }
+  }
+}
