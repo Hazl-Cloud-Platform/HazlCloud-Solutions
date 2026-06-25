@@ -65,21 +65,14 @@ export const metadata: Metadata = {
     title: 'HAZL Solutions — Build or scale your app',
     description:
       'We design, build, and run revenue-ready apps for founders, and turn fragile AI-built prototypes into reliable, scalable businesses for growing teams.',
-    images: [
-      {
-        url: '/brand/hazlCloud-logo-bw2.png',
-        width: 1024,
-        height: 1024,
-        alt: 'HAZL Solutions',
-      },
-    ],
+    // og:image is supplied per-route by opengraph-image.tsx (generated 1200×630).
   },
   twitter: {
     card: 'summary_large_image',
     title: 'HAZL Solutions — Build or scale your app',
     description:
       'We design, build, and run revenue-ready apps for founders, and turn fragile AI-built prototypes into reliable, scalable businesses.',
-    images: ['/brand/hazlCloud-logo-bw2.png'],
+    // twitter:image falls back to the per-route og:image.
   },
   robots: {
     index: true,

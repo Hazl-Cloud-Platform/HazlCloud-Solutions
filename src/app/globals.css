@@ -943,9 +943,10 @@ html, body {
 .switch-pill:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.28); }
 
 /* Partner marquee */
+/* scrolls toward the right (two identical copies make it seamless) */
 @keyframes hzMarquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
 }
 .hz-marquee-track { display: flex; width: max-content; animation: hzMarquee 50s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .hz-marquee-track { animation: none; } }

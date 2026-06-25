@@ -25,14 +25,14 @@ export const metadata: Metadata = {
     title: 'Launch a real app your customers pay for — from $80/month',
     description:
       'We design, build, and run a revenue-ready app for you. Live in 2 weeks, $80/month CAD, nothing upfront. Built & hosted in Canada.',
-    images: [{ url: '/brand/hazlCloud-logo-bw2.png', width: 1024, height: 1024, alt: 'HAZL Solutions' }],
+    // og:image supplied by ./opengraph-image.tsx ($80 tile, 1200×630).
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Launch a real app your customers pay for — from $80/month',
     description:
       'We design, build, and run a revenue-ready app for you. Live in 2 weeks, $80/month CAD, nothing upfront.',
-    images: ['/brand/hazlCloud-logo-bw2.png'],
+    // twitter:image falls back to the per-route og:image.
   },
 }
 
