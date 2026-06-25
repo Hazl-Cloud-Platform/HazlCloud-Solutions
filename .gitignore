@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -22,19 +23,28 @@
 .DS_Store
 *.pem
 
-# debug
+# secrets / credentials (defense-in-depth for a public repo)
+*.key
+*.p12
+*.pfx
+*.pkcs12
+id_rsa*
+*credentials*.json
+*service-account*.json
+
+# debug / logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.eslintcache
+.turbo
 
-
-# env (keep .env.example; ignore everything else)
+# env — ignore ALL env files; keep only the committed placeholder example
 .env
-.env.local
-.env.development.local
-.env.production.local
-.env.test.local
+.env.*
+!.env.example
 
 # vercel
 .vercel
