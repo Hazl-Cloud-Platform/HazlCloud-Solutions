@@ -61,7 +61,7 @@ export default async function InsightsIndexPage() {
         </nav>
       </header>
 
-      <main className="approach-main">
+      <main id="main-content" className="approach-main">
         <section className="approach-section opening">
           <div className="eyebrow">News & ideas</div>
           <h1 className="approach-h1" style={{ fontSize: 'clamp(26px, 3.4vw, 44px)', textWrap: 'wrap', whiteSpace: 'normal' }}>

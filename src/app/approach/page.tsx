@@ -62,7 +62,7 @@ export default function ApproachPage() {
         </nav>
       </header>
 
-      <main className="approach-main">
+      <main id="main-content" className="approach-main">
 
         {/* 1. Opening */}
         <section className="approach-section opening reveal">

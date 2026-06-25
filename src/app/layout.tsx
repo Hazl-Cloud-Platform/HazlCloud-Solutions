@@ -17,11 +17,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hazlsolutions.com'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'HAZL Solutions - Your technical partner in scaling AI-built products',
+    default: 'HAZL Solutions — Build or scale your app',
     template: '%s | HAZL Solutions',
   },
   description:
-    'HAZL Solutions turns fragile AI-built prototypes into reliable, scalable businesses. We specialize in operations: cloud, infrastructure, observability, security, uptime, and recovery for founders who built with AI.',
+    'HAZL Solutions designs, builds, and runs revenue-ready apps for non-technical founders and small businesses — and turns fragile AI-built products into reliable, scalable businesses for growing teams.',
   applicationName: 'HAZL Solutions',
   authors: [{ name: 'HAZL Solutions' }],
   creator: 'HAZL Solutions',
@@ -62,9 +62,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: siteUrl,
     siteName: 'HAZL Solutions',
-    title: 'HAZL Solutions - Your technical partner in scaling AI-built products',
+    title: 'HAZL Solutions — Build or scale your app',
     description:
-      'We turn fragile AI-built prototypes into reliable, scalable businesses. Cloud, infrastructure, observability, security, and uptime for AI-built products.',
+      'We design, build, and run revenue-ready apps for founders, and turn fragile AI-built prototypes into reliable, scalable businesses for growing teams.',
     images: [
       {
         url: '/brand/hazlCloud-logo-bw2.png',
@@ -76,9 +76,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HAZL Solutions - Your technical partner in scaling AI-built products',
+    title: 'HAZL Solutions — Build or scale your app',
     description:
-      'We turn fragile AI-built prototypes into reliable, scalable businesses. Operations, security, performance, and ongoing support.',
+      'We design, build, and run revenue-ready apps for founders, and turn fragile AI-built prototypes into reliable, scalable businesses.',
     images: ['/brand/hazlCloud-logo-bw2.png'],
   },
   robots: {
@@ -144,6 +144,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className="font-sans bg-black text-white antialiased">
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         {children}
         <script
           type="application/ld+json"
