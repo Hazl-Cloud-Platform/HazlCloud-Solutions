@@ -26,6 +26,9 @@ export function EnterpriseFooter() {
           <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>HAZL</span>
           <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,.42)' }}>SOLUTIONS</span>
         </div>
+        <a href="/startup" style={{ color: 'rgba(255,255,255,.5)', textDecoration: 'none' }}>
+          Affordable software development for startups →
+        </a>
         <span>© HAZL Solutions · Built by operators, not just developers.</span>
       </div>
     </footer>

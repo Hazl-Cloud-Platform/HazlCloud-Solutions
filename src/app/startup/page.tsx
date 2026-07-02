@@ -5,10 +5,16 @@ import { FAQS } from '@/components/startup/data'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hazlsolutions.com'
 
 export const metadata: Metadata = {
-  title: { absolute: 'Launch a real app from $80/month — HAZL Solutions (Canada)' },
+  title: { absolute: 'Affordable software development from $80/mo — HAZL Solutions' },
   description:
-    'HAZL Solutions designs, builds, secures, and runs a real, revenue-ready app for non-technical founders — or takes your AI-built prototype to market. Live in 2 weeks, from $80/month CAD, with no upfront cost. Canadian team — your data stays secure.',
+    'Affordable, done-for-you software development for founders and small businesses. We design, build, secure & run a revenue-ready app — or fix your AI-built prototype — from $80/month CAD, live in 2 weeks, no upfront cost. Canadian team; your data stays secure.',
   keywords: [
+    'affordable software development',
+    'cheap software development',
+    'software development for startups',
+    'done-for-you app development',
+    'software development company Canada',
+    'affordable app development',
     'build a SaaS without coding',
     'app for non-technical founders',
     'MVP development Canada',
@@ -25,16 +31,16 @@ export const metadata: Metadata = {
     type: 'website',
     url: '/startup',
     siteName: 'HAZL Solutions',
-    title: 'Launch a real app your customers pay for — from $80/month',
+    title: 'Affordable software development, done-for-you — from $80/month',
     description:
-      'Start from an idea, or bring an AI-built app that isn’t market-ready. We design, fix, secure & scale it into a revenue-ready product. Live in 2 weeks, $80/month CAD, nothing upfront. Built & hosted in Canada.',
+      'Affordable, done-for-you software development. Start from an idea, or bring an AI-built app that isn’t market-ready — we design, fix, secure & scale it into a revenue-ready product. Live in 2 weeks, $80/month CAD, nothing upfront. Built & hosted in Canada.',
     // og:image supplied by ./opengraph-image.tsx ($80 tile, 1200×630).
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Launch a real app your customers pay for — from $80/month',
+    title: 'Affordable software development, done-for-you — from $80/month',
     description:
-      'Start from an idea, or bring an AI-built app that isn’t market-ready. We design, fix, secure & scale it into a revenue-ready product. Live in 2 weeks, $80/month CAD, nothing upfront.',
+      'Affordable, done-for-you software development. Start from an idea, or bring an AI-built app that isn’t market-ready — we design, fix, secure & scale it into a revenue-ready product. Live in 2 weeks, $80/month CAD, nothing upfront.',
     // twitter:image falls back to the per-route og:image.
   },
 }
@@ -42,11 +48,13 @@ export const metadata: Metadata = {
 const serviceJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Service',
-  serviceType: 'Done-for-you app build, hosting and maintenance',
+  name: 'Affordable software development, done-for-you',
+  serviceType: 'Affordable software development, app build, hosting and maintenance',
+  category: 'Software Development',
   provider: { '@type': 'Organization', name: 'HAZL Solutions', url: siteUrl },
   areaServed: { '@type': 'Country', name: 'Canada' },
   description:
-    'HAZL builds a real, revenue-ready app for non-technical founders and runs it end-to-end on HAZL Cloud — hosting, security, backups, updates and scaling — for one low monthly price.',
+    'Affordable, done-for-you software development: HAZL builds a real, revenue-ready app for non-technical founders — or productionizes an AI-built prototype — and runs it end-to-end on HAZL Cloud (hosting, security, backups, updates and scaling) for one low monthly price.',
   offers: {
     '@type': 'Offer',
     priceCurrency: 'CAD',
@@ -72,6 +80,20 @@ const faqJsonLd = {
   })),
 }
 
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Affordable software development for startups',
+      item: `${siteUrl}/startup`,
+    },
+  ],
+}
+
 export default function StartupPage() {
   return (
     <>
@@ -83,6 +105,10 @@ export default function StartupPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
     </>
   )

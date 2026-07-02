@@ -341,6 +341,13 @@ export default function ApproachPage() {
             Turn My MVP Into a Real Product
             <ArrowRight size={16} />
           </a>
+          <p style={{ marginTop: 16 }}>
+            Just starting from an idea?{' '}
+            <Link href="/startup" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+              See our affordable software development for startups
+            </Link>
+            .
+          </p>
         </div>
 
       </main>
