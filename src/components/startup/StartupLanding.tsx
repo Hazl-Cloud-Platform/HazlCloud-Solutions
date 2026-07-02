@@ -154,9 +154,9 @@ export function StartupLanding() {
                   margin: '22px 0 0',
                 }}
               >
-                Turn your idea
+                Turn your idea — or AI app —
                 <br />
-                into an app that
+                into a product that
                 <br />
                 <span style={{ color: 'var(--accent)' }}>makes money.</span>
               </h1>
@@ -169,8 +169,9 @@ export function StartupLanding() {
                   maxWidth: 500,
                 }}
               >
-                We design, build, and run a real, revenue-ready app for you — live in two weeks. You
-                stay focused on customers; we handle every technical part.
+                Just an idea — or an AI-built app that looks done but breaks with real customers? We
+                design, fix, secure, and scale it into a revenue-ready product, live in two weeks. You
+                focus on customers; we handle every technical part.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 32, flexWrap: 'wrap' }}>
                 <a

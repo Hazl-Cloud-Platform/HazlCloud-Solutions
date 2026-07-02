@@ -7,7 +7,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hazlsolutions.com'
 export const metadata: Metadata = {
   title: { absolute: 'Launch a real app from $80/month — HAZL Solutions (Canada)' },
   description:
-    'HAZL Solutions designs, builds, and runs a real, revenue-ready app for non-technical founders and small businesses. Live in 2 weeks, from $80/month CAD, with no upfront cost. Canadian team — your data stays secure.',
+    'HAZL Solutions designs, builds, secures, and runs a real, revenue-ready app for non-technical founders — or takes your AI-built prototype to market. Live in 2 weeks, from $80/month CAD, with no upfront cost. Canadian team — your data stays secure.',
   keywords: [
     'build a SaaS without coding',
     'app for non-technical founders',
@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     '$80 a month app',
     'startup app builder',
     'managed app hosting',
+    'fix an AI-built app',
+    'make AI app production ready',
+    'launch a vibe-coded app',
   ],
   alternates: { canonical: '/startup' },
   openGraph: {
@@ -24,14 +27,14 @@ export const metadata: Metadata = {
     siteName: 'HAZL Solutions',
     title: 'Launch a real app your customers pay for — from $80/month',
     description:
-      'We design, build, and run a revenue-ready app for you. Live in 2 weeks, $80/month CAD, nothing upfront. Built & hosted in Canada.',
+      'Start from an idea, or bring an AI-built app that isn’t market-ready. We design, fix, secure & scale it into a revenue-ready product. Live in 2 weeks, $80/month CAD, nothing upfront. Built & hosted in Canada.',
     // og:image supplied by ./opengraph-image.tsx ($80 tile, 1200×630).
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Launch a real app your customers pay for — from $80/month',
     description:
-      'We design, build, and run a revenue-ready app for you. Live in 2 weeks, $80/month CAD, nothing upfront.',
+      'Start from an idea, or bring an AI-built app that isn’t market-ready. We design, fix, secure & scale it into a revenue-ready product. Live in 2 weeks, $80/month CAD, nothing upfront.',
     // twitter:image falls back to the per-route og:image.
   },
 }
