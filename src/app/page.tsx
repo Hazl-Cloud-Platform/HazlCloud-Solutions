@@ -175,8 +175,8 @@ export default function ChooserPage() {
                 lineHeight: 1.5,
               }}
             >
-              I have an idea — or a rough AI-built app — and I want to launch a real product people
-              pay for.
+              I want affordable software development — I have an idea, or a rough AI-built app, and I
+              want to launch a real product people pay for.
             </div>
             <div
               style={{

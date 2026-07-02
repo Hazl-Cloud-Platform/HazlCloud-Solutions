@@ -106,4 +106,20 @@ export const FAQS: Faq[] = [
     q: 'What happens if I grow quickly?',
     a: 'Great problem to have. HAZL Cloud scales with you automatically, and pricing only grows sensibly as your usage does. No surprise bills.',
   },
+  {
+    q: 'How much does it cost to build an app in Canada?',
+    a: 'With HAZL it’s $80/month CAD, all-in — design, build, hosting, security, backups, updates and maintenance — with no build fee and nothing upfront. Instead of a large one-time development bill, you pay one low monthly price, and a focused first version is usually live in about two weeks.',
+  },
+  {
+    q: 'Do you offer affordable software development for startups?',
+    a: 'Yes — that’s our core offer. Affordable, done-for-you software development for non-technical founders and small businesses: we design, build, secure and run your app from $80/month CAD, live in about two weeks, with no upfront cost. You own the app and your data.',
+  },
+  {
+    q: 'What’s the cheapest way to build a SaaS?',
+    a: 'The cheapest path isn’t the lowest hourly rate — it’s not paying twice. Most cost comes after launch: hosting, security, fixes and scaling. HAZL rolls the build and all of that into $80/month CAD with no upfront cost, so you avoid both a big development bill and surprise running costs later.',
+  },
+  {
+    q: 'How do I make my AI-built app production-ready?',
+    a: 'Bring what you built. We assess it, secure it, wire up the missing pieces (payments, logins, real data, backups), and run it on HAZL Cloud with monitoring and scaling — so it’s reliable for real customers instead of one demo user. It’s usually faster than starting fresh.',
+  },
 ]

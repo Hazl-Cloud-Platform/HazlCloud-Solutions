@@ -31,7 +31,10 @@ export function PartnerMarquee() {
           borderRadius: 14,
           boxShadow: '0 3px 14px rgba(0,0,0,.3)',
           flexShrink: 0,
-          opacity: s === 'ok' ? 1 : 0,
+          // Show by default; only hide tiles whose image actually fails. (Fading
+          // in on `onLoad` broke for cached images, whose load fires before React
+          // attaches the handler — leaving every logo stuck invisible.)
+          opacity: s === 'fail' ? 0 : 1,
           transition: 'opacity .35s ease',
         }}
       >
@@ -40,6 +43,14 @@ export function PartnerMarquee() {
           src={p.src}
           alt={ariaHidden ? '' : p.name}
           aria-hidden={ariaHidden || undefined}
+          ref={(el) => {
+            // Catch images already complete (cached) before onLoad can fire.
+            if (el?.complete) {
+              setStatus((prev) =>
+                prev[i] ? prev : { ...prev, [i]: el.naturalWidth > 0 ? 'ok' : 'fail' }
+              )
+            }
+          }}
           onLoad={() => setStatus((prev) => ({ ...prev, [i]: 'ok' }))}
           onError={() => setStatus((prev) => ({ ...prev, [i]: 'fail' }))}
           style={{
@@ -55,7 +66,7 @@ export function PartnerMarquee() {
   }
 
   return (
-    <div style={{ marginTop: 44 }}>
+    <div style={{ marginTop: 28 }}>
       <div
         style={{
           fontSize: 11,

@@ -125,8 +125,8 @@ export function StartupLanding() {
             pointerEvents: 'none',
           }}
         />
-        <div style={{ position: 'relative', maxWidth: 1160, margin: '0 auto', padding: '72px 32px 64px' }}>
-          <div style={{ display: 'flex', gap: 48, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', maxWidth: 1160, margin: '0 auto', padding: '40px 32px 32px' }}>
+          <div style={{ display: 'flex', gap: 40, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 520px', minWidth: 300 }}>
               <div
                 style={{
@@ -147,32 +147,32 @@ export function StartupLanding() {
               </div>
               <h1
                 style={{
-                  fontSize: 'clamp(40px,6.2vw,66px)',
-                  lineHeight: 0.98,
-                  letterSpacing: '-.045em',
+                  fontSize: 'clamp(32px,4.6vw,50px)',
+                  lineHeight: 1.04,
+                  letterSpacing: '-.04em',
                   fontWeight: 700,
-                  margin: '22px 0 0',
+                  margin: '12px 0 0',
                 }}
               >
-                Turn your idea
+                Built with AI? Great.
                 <br />
-                into an app that
+                Ready for customers?
                 <br />
-                <span style={{ color: 'var(--accent)' }}>makes money.</span>
+                <span style={{ color: 'var(--accent)' }}>Probably not.</span>
               </h1>
               <p
                 style={{
-                  fontSize: 'clamp(16px,2.1vw,19px)',
+                  fontSize: 'clamp(15px,1.9vw,17px)',
                   lineHeight: 1.5,
                   color: 'rgba(255,255,255,.72)',
-                  margin: '22px 0 0',
-                  maxWidth: 500,
+                  margin: '14px 0 0',
+                  maxWidth: 460,
                 }}
               >
-                We design, build, and run a real, revenue-ready app for you — live in two weeks. You
-                stay focused on customers; we handle every technical part.
+                AI is excellent at building demos. We turn them into secure, scalable products that
+                survive real users, real traffic, and real businesses.
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 32, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 22, flexWrap: 'wrap' }}>
                 <a
                   href={CTA_URL}
                   target="_blank"
@@ -212,7 +212,7 @@ export function StartupLanding() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 8,
-                  marginTop: 26,
+                  marginTop: 16,
                   fontSize: 13,
                   color: 'rgba(255,255,255,.5)',
                 }}
@@ -263,7 +263,7 @@ export function StartupLanding() {
               </div>
               <div style={{ height: 1, background: 'rgba(0,0,0,.18)', margin: '20px 0' }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {['Built & launched — no build fee', 'Hosted, secured & maintained', '$0 upfront capital'].map(
+                {['From prototype to production', 'Hosted, secured & maintained', '$0 upfront capital'].map(
                   (t) => (
                     <div
                       key={t}
@@ -485,11 +485,11 @@ export function StartupLanding() {
         }}
       >
         <div style={{ maxWidth: 1160, margin: '0 auto', padding: '64px 32px' }}>
-          <div style={EYEBROW}>03 — What we can build</div>
+          <div style={EYEBROW}>03 — Affordable software development</div>
           <h2 style={{ ...SECTION_H2, margin: '16px 0 8px' }}>If your customers can pay for it, we can build it.</h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.6)', margin: '0 0 36px', maxWidth: 560 }}>
-            A few of the products founders launch with us. Not sure which fits? That’s the first
-            conversation.
+            Affordable, done-for-you software development — no dev team, no big upfront bill. A few of
+            the products founders launch with us. Not sure which fits? That’s the first conversation.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16 }}>
             {EXAMPLES.map(({ icon: Icon, title, body }) => (

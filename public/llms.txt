@@ -1,0 +1,36 @@
+# HAZL Solutions
+
+> HAZL Solutions is a Canadian company offering affordable, done-for-you software development. We design, build, secure, and run a real, revenue-ready app for non-technical founders and small businesses — or fix and productionize an AI-built ("vibe-coded") prototype that isn't market-ready — from $80/month CAD, live in about two weeks, with no upfront cost. For scale-ups and enterprises, we harden and scale existing products for real load. Everything runs on HAZL Cloud, our managed platform, and is hosted in Canada; you own your app and your data.
+
+## What we do
+- Build a real, revenue-ready app from your idea — design, payments, logins, customer accounts, your data, backups, and security, wired up and tested.
+- Fix, secure, and scale AI-generated / "vibe-coded" apps that look done but break with real customers — usually faster than starting over.
+- Run and maintain everything day-to-day on HAZL Cloud: hosting & uptime, security & daily backups, updates & fixes, automatic scaling, and a real human on call.
+- For growing teams: reliability, security, performance, scalability, and ongoing operations for a product that already has real users.
+
+## Pricing
+- From $80/month CAD, all-in. No build fee, no setup fee, nothing upfront.
+- Typically live in ~2 weeks for a focused first version, then improved weekly.
+- Cancel anytime. You own your app and your data.
+
+## Who we serve
+- Non-technical founders and small businesses launching their first revenue-ready app: https://hazlsolutions.com/startup
+- Scale-ups and enterprises (e.g. 300+ paid users) hardening a product to be reliable, secure, and ready to scale: https://hazlsolutions.com/enterprise
+
+## What sets us apart
+- Operators, not just developers: our specialty is the "run it" side — cloud, infrastructure, observability, uptime, recovery, and the day-to-day systems work that keeps production stable. Our thesis: "Dev is solved. Ops is where products fail."
+- HAZL Cloud, our proprietary managed platform, is how we can both build AND keep an app alive for one low monthly price instead of a large upfront bill.
+- Done-for-you and jargon-free: founders stay focused on customers while we handle every technical part.
+- Canadian team, data hosted in Canada; you own your product and data.
+- Trusted alongside partners and programs including Microsoft, Amazon, Google, Plug and Play, Platform Calgary, Amii, Alberta Innovates, SAIT, NAIT, University of Calgary, APEGA, BMO, and Web Summit.
+
+## Key pages
+- [Startup — affordable software development, an app from $80/mo](https://hazlsolutions.com/startup)
+- [Enterprise — make an existing product reliable and ready to scale](https://hazlsolutions.com/enterprise)
+- [Approach — building with an operator's mindset](https://hazlsolutions.com/approach)
+- [Insights — articles on shipping and running software](https://hazlsolutions.com/insights)
+
+## Contact
+- Book a free call: https://calendly.com/anthony-tam-hazl/30min
+- Managed platform: https://hazlcloud.com
+- Website: https://hazlsolutions.com
