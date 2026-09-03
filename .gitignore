@@ -66,3 +66,4 @@ ds-bundle/
 
 # local-only source assets — the served copies live in public/brand/partners/
 /Logos/
+/.vibe-storage/

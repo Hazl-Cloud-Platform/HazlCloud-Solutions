@@ -15,7 +15,8 @@
     "vibe:migrate": "doppler run -p hazl-general -c prd -- npx tsx scripts/vibe-migrate.ts",
     "vibe:check": "doppler run -p hazl-general -c prd -- npx tsx scripts/vibe-check.ts",
     "vibe:hash": "npx tsx scripts/vibe-hash-password.ts",
-    "vibe:probe": "doppler run -p dr-keys -c prd_llm_opus4-8 -- npx tsx scripts/vibe-probe-llm.ts"
+    "vibe:probe": "doppler run -p dr-keys -c prd_llm_opus4-8 -- npx tsx scripts/vibe-probe-llm.ts",
+    "vibe:smoke": "./scripts/run-with-doppler.sh npx tsx scripts/vibe-smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

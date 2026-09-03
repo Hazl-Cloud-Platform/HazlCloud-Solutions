@@ -11,7 +11,13 @@ export const DEFAULT_PRICING: Pricing = {
 }
 
 export const DEFAULT_MONTHLY_BUDGET_USD = 100
-export const DEFAULT_DAILY_BUDGET_USD = 3.5
+/**
+ * A monthly-only cap would let one good day burn the whole month and leave the
+ * primary conversion page showing "at capacity" for the other 29. This allows a
+ * genuine burst (roughly 15-25 sessions) while the monthly ceiling still governs
+ * the total. Adjustable from the admin page.
+ */
+export const DEFAULT_DAILY_BUDGET_USD = 8
 
 export async function getSetting(key: string): Promise<string | null> {
   const row = await queryOne<{ value: string }>(`SELECT "value" FROM ${T.settings} WHERE "key" = $1`, [key])

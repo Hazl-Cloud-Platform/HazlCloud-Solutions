@@ -38,9 +38,9 @@ function state(over: Partial<BudgetState> = {}): BudgetState {
     monthSpendUsd: 0,
     monthBudgetUsd: 100,
     daySpendUsd: 0,
-    dayBudgetUsd: 3.5,
+    dayBudgetUsd: 8,
     sessionSpendUsd: 0,
-    sessionBudgetUsd: 0.6,
+    sessionBudgetUsd: 1.0,
     ...over,
   }
 }
@@ -55,15 +55,15 @@ describe('blockingLimit', () => {
   })
 
   it('blocks on the daily cap before the month is exhausted', () => {
-    expect(blockingLimit(state({ monthSpendUsd: 10, daySpendUsd: 3.5 }))).toBe('daily_budget')
+    expect(blockingLimit(state({ monthSpendUsd: 10, daySpendUsd: 8 }))).toBe('daily_budget')
   })
 
   it('blocks a single expensive session while budgets remain', () => {
-    expect(blockingLimit(state({ sessionSpendUsd: 0.6 }))).toBe('session_cost')
+    expect(blockingLimit(state({ sessionSpendUsd: 1.0 }))).toBe('session_cost')
   })
 
   it('reports the monthly cap first when several are exceeded', () => {
-    expect(blockingLimit(state({ monthSpendUsd: 200, daySpendUsd: 9, sessionSpendUsd: 5 }))).toBe('budget_exceeded')
+    expect(blockingLimit(state({ monthSpendUsd: 200, daySpendUsd: 20, sessionSpendUsd: 5 }))).toBe('budget_exceeded')
   })
 
   it('does not block on a string-shaped spend value', () => {

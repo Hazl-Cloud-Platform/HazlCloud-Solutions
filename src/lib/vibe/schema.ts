@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS "Sol-Vibe-Code_settings" (
 -- cache read 0.1x, all per MTok.
 INSERT INTO "Sol-Vibe-Code_settings" ("key","value") VALUES
   ('monthly_budget_usd', '100'),
-  ('daily_budget_usd', '3.50'),
+  ('daily_budget_usd', '8'),
   ('admin_session_epoch', '1'),
   ('pricing', '{"input_per_mtok":5,"output_per_mtok":25,"cache_write_per_mtok":6.25,"cache_read_per_mtok":0.5}')
 ON CONFLICT ("key") DO NOTHING;

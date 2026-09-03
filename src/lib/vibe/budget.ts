@@ -6,9 +6,19 @@ import { getDailyBudgetUsd, getMonthlyBudgetUsd } from './settings'
  * standing between a bad day and an unbounded LLM bill.
  */
 
-/** Hard ceiling on one visitor's whole session, independent of the turn cap: a
- *  turn that maximises max_tokens costs ~30x one that does not. */
-export const MAX_SESSION_COST_USD = 0.6
+/**
+ * Hard ceiling on one visitor's whole session, independent of the turn cap.
+ *
+ * Sized from MEASURED costs against the live gateway, not an estimate:
+ *   first generation      ~$0.15-0.17  (5.2k-6.2k output tokens)
+ *   surgical edit          ~$0.04      (169 output tokens)
+ *   broad restyle          ~$0.19      (the model rewrites, correctly)
+ *   failed edit + fallback ~$0.43      (two calls; the case worth avoiding)
+ *
+ * A legitimate five-turn session therefore lands around $0.45-0.70, so this is a
+ * ceiling on abuse rather than a limit a real visitor should ever meet.
+ */
+export const MAX_SESSION_COST_USD = 1.0
 
 /**
  * Start of the current calendar month, in UTC.

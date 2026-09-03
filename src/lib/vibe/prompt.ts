@@ -41,12 +41,16 @@ To change an existing page, emit one or more surgical edit regions instead:
 ===EDIT_END_<NONCE>===
 
 Rules for edits:
-- The SEARCH text must appear EXACTLY ONCE in the current document. Include enough surrounding lines to make it unique, and at least 40 characters.
+- The SEARCH text must appear EXACTLY ONCE in the current document. Include enough surrounding lines to make it unique, and at least 40 characters. A short snippet like a class attribute or a closing tag will appear many times and will be rejected.
 - To insert, SEARCH for an existing anchor line and REPLACE with that line plus the new content.
 - To delete, REPLACE with the empty string.
-- Prefer edits. A one-word copy change must never become a full rewrite.
-- Emit a full document region instead when the request is a redesign, a new screen, or would touch more than roughly a third of the page.
-- You may emit several edit regions in one reply; they are applied in order.
+- Edits are applied in order against the document as it changes, so a later SEARCH must match the text as your earlier edits have already left it.
+
+Choose edits or a full rewrite BEFORE you start writing, using this rule:
+
+- Use edits for a change confined to a few places: copy changes, one new card or row, one section added or removed, a single component restyled.
+- Use a full ===HTML_BEGIN_<NONCE>=== region for anything that sweeps the page: switching to dark mode or changing the palette, changing the font or the type scale, restructuring the layout, or a redesign. These touch nearly every element, and patching them is both slower and more expensive than rewriting.
+- Hard limit: if you would write more than SIX edit regions, or more than about 120 lines of replacement text in total, emit a full document instead. Writing many large patches costs more than the rewrite it was trying to avoid.
 
 Outside the regions, write ONE short sentence (max 20 words) naming what you built or changed. No markdown, no code fences, no headings, no bullet lists, no explanation of the code, no apologies, and no clarifying questions -- make confident choices and proceed.
 
