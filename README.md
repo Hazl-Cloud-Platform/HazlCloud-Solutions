@@ -154,6 +154,21 @@ self-contained HTML document, and it renders in a sandboxed iframe. It is delibe
 turning a demo into a real product is the work HAZL does. The exit is "Contact our team",
 which captures an email and keeps the design.
 
+### The target host is shared and small
+
+`EC2_HOST` (3.132.59.166, instance `i-01392620086308e29`) is a **t3.micro: 1 GB RAM,
+2 vCPU** already serving four production sites — `fruttagala.ca`, `nexgen-flha.hazl.ca`,
+`nexgen-flha-pembina.hazl.ca` and `smswebpages.hazl.ca` — with roughly 335 MB free and swap
+already in use. Consequences baked into the deploy config:
+
+- The app binds **port 3002**; 3000 and 3001 are taken by the other Next.js apps.
+- The systemd unit sets `MemoryHigh=220M` / `MemoryMax=320M` so a runaway here degrades this
+  service instead of OOM-killing a neighbour.
+- The deploy workflow probes all four neighbours before and after every release.
+
+If the studio gets real traffic, this box needs resizing — a third Next.js server plus long-lived
+SSE connections on a 1 GB instance has very little headroom.
+
 ### It cannot run on Vercel
 
 Generated documents are stored **on the filesystem** (Postgres holds only the pointer), a first

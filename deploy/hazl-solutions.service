@@ -20,15 +20,29 @@ WorkingDirectory=/srv/hazl-solutions/current
 # The INNER config wins on a key collision, which is why `npm run vibe:check`
 # asserts the resolved DATABASE_URL host.
 EnvironmentFile=/etc/hazl/doppler.env
+# PORT comes from /etc/hazl/doppler.env. The host already runs other Next apps
+# on 3000 and 3001 (fruttagala, smswebpages), so this MUST NOT default to 3000 --
+# a collision would fail to bind and, worse, could be mistaken for the wrong app
+# responding. Verify with `ss -tln` before changing it.
 ExecStart=/usr/bin/doppler run --token "${DOPPLER_TOKEN_GENERAL}" -- \
           /usr/bin/doppler run --token "${DOPPLER_TOKEN_LLM}" -- \
-          /usr/bin/node node_modules/.bin/next start --port 3000
+          /usr/bin/node node_modules/.bin/next start --port ${PORT}
 
 Restart=always
 RestartSec=3
 # Generation turns run 60-100s; give in-flight requests time to finish.
 TimeoutStopSec=120
 KillSignal=SIGTERM
+
+# This is a SHARED t3.micro (1 GB) already running four production sites and
+# touching swap. A memory ceiling means a runaway here degrades this service
+# rather than OOM-killing a neighbour. MemoryHigh throttles first; MemoryMax is
+# the hard stop. Raise both if the box is ever resized.
+MemoryHigh=220M
+MemoryMax=320M
+# Two vCPUs shared with everything else; generation is I/O-bound on the LLM
+# gateway, so this only bites during a scrypt burst or an HTML parse storm.
+CPUWeight=50
 
 # Hardening. ReadWritePaths is the storage volume: generated documents are the
 # source of truth and must survive, so the rest of the filesystem is read-only.

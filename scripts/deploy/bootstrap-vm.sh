@@ -20,6 +20,17 @@ APP_USER=hazl
 APP_ROOT=/srv/hazl-solutions
 STORAGE_DIR=/var/lib/hazl-vibe
 SECRETS_DIR=/etc/hazl
+# 3000 and 3001 are already taken on the shared host by other Next.js apps.
+APP_PORT=${APP_PORT:-3002}
+
+echo "==> port check"
+if ss -tln 2>/dev/null | grep -q ":$APP_PORT "; then
+  echo "ERROR: port $APP_PORT is already in use on this host." >&2
+  ss -tlnp 2>/dev/null | grep ":$APP_PORT " >&2
+  echo "Pick a free port: APP_PORT=3003 sudo -E bash $0" >&2
+  exit 1
+fi
+echo "    port $APP_PORT is free"
 
 echo "==> user and directories"
 id -u "$APP_USER" >/dev/null 2>&1 || useradd --system --create-home --shell /usr/sbin/nologin "$APP_USER"
@@ -83,7 +94,11 @@ if [ ! -f "$SECRETS_DIR/doppler.env" ]; then
 # These two lines are the only secrets stored on this machine.
 DOPPLER_TOKEN_GENERAL=
 DOPPLER_TOKEN_LLM=
+# Port this app binds on loopback. Must not collide with the other Next.js apps
+# already on this host (3000, 3001 at time of writing).
+PORT=__APP_PORT__
 ENVEOF
+  sed -i "s/__APP_PORT__/$APP_PORT/" "$SECRETS_DIR/doppler.env"
   chmod 600 "$SECRETS_DIR/doppler.env"
   echo "    created $SECRETS_DIR/doppler.env -- FILL IN THE TWO TOKENS"
 fi

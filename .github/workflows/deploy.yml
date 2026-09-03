@@ -29,9 +29,14 @@ concurrency:
 
 env:
   APP_ROOT: /srv/hazl-solutions
-  # This VM is shared. If a change to the shared nginx config takes the
-  # neighbouring app down, the deploy should fail loudly rather than silently.
-  NEIGHBOUR_URL: https://smswebpages.hazl.ca
+  # This VM is shared with FOUR other production sites (verified on the host).
+  # A mistake in the shared nginx config takes them down, so every one is probed
+  # before and after a deploy and the run fails if we broke one that was up.
+  NEIGHBOUR_URLS: >-
+    https://smswebpages.hazl.ca
+    https://fruttagala.ca
+    https://nexgen-flha.hazl.ca
+    https://nexgen-flha-pembina.hazl.ca
 
 jobs:
   deploy:
@@ -89,11 +94,15 @@ jobs:
           fi
           npm run build
 
-      - name: Check the neighbour is healthy BEFORE we touch anything
+      - name: Check the neighbours are healthy BEFORE we touch anything
         run: |
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$NEIGHBOUR_URL" || echo 000)
-          echo "neighbour before deploy: $code"
-          echo "NEIGHBOUR_BEFORE=$code" >> "$GITHUB_ENV"
+          before=""
+          for u in $NEIGHBOUR_URLS; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)
+            echo "  $u -> $code"
+            before="$before $u=$code"
+          done
+          echo "NEIGHBOURS_BEFORE=$before" >> "$GITHUB_ENV"
 
       - name: Configure SSH
         run: |
@@ -202,14 +211,19 @@ jobs:
           sudo systemctl restart hazl-solutions
           REMOTE
 
-      - name: Smoke test the neighbour
-        # Only fails the run if WE broke it: if it was already down before the
-        # deploy, that is someone else's problem and not a reason to block.
+      - name: Smoke test the neighbours
+        # Only fails the run if WE broke one: a site that was already down before
+        # the deploy is someone else's problem and not a reason to block.
         run: |
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$NEIGHBOUR_URL" || echo 000)
-          echo "neighbour after deploy: $code (before: $NEIGHBOUR_BEFORE)"
-          if [ "$NEIGHBOUR_BEFORE" = "200" ] && [ "$code" != "200" ]; then
-            echo "This deploy took down smswebpages.hazl.ca -- check the nginx config."
+          broke=""
+          for u in $NEIGHBOUR_URLS; do
+            was=$(echo "$NEIGHBOURS_BEFORE" | tr ' ' '\n' | grep -F "$u=" | cut -d= -f2)
+            now=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)
+            echo "  $u -> $now (before: ${was:-?})"
+            if [ "$was" = "200" ] && [ "$now" != "200" ]; then broke="$broke $u"; fi
+          done
+          if [ -n "$broke" ]; then
+            echo "::error::This deploy took down:$broke -- check the shared nginx config."
             exit 1
           fi
 
