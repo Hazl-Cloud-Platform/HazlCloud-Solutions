@@ -49,7 +49,12 @@ export function siteOrigin(): string | null {
  */
 export function assertSameOrigin(req: Request): boolean {
   const expected = siteOrigin()
-  if (!expected) return true // unconfigured (local dev): nothing to compare against
+  if (!expected) {
+    // A missing or malformed NEXT_PUBLIC_SITE_URL must not silently disable the
+    // check on every mutating route in production -- that is exactly the state
+    // this function exists to prevent. Permissive only outside production.
+    return process.env.NODE_ENV !== 'production'
+  }
 
   const origin = req.headers.get('origin')
   if (origin) {

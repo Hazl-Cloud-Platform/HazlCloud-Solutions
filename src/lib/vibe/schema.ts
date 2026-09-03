@@ -24,8 +24,15 @@ CREATE TABLE IF NOT EXISTS "Sol-Vibe-Code_sessions" (
   "turn_count"            integer     NOT NULL DEFAULT 0,
   "turnstile_verified_at" timestamptz NULL,
   "created_at"            timestamptz NOT NULL DEFAULT now(),
-  "last_turn_at"          timestamptz NULL
+  "last_turn_at"          timestamptz NULL,
+  -- One full-rewrite rescue per session. Kept here rather than in process memory
+  -- so it survives a restart and cannot grow without bound.
+  "fallback_used"         boolean     NOT NULL DEFAULT false
 );
+
+-- Added after the initial release; harmless to re-run.
+ALTER TABLE "Sol-Vibe-Code_sessions"
+  ADD COLUMN IF NOT EXISTS "fallback_used" boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS "Sol-Vibe-Code_sessions_ip_created_idx"
   ON "Sol-Vibe-Code_sessions" ("ip_hash", "created_at" DESC);
 CREATE INDEX IF NOT EXISTS "Sol-Vibe-Code_sessions_created_idx"

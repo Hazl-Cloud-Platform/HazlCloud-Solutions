@@ -152,7 +152,11 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
               break
             case 'done':
               setTurnsLeft(Number(d.turnsLeft ?? 0))
-              if (Number(d.turnsLeft ?? 0) <= 0) setExhausted(true)
+              // Only latch on a turn that actually ran. A `done` from a busy
+              // signal or a transient failure carries no meaningful count, and
+              // latching on it would end the session mid-flow with no way back
+              // except a reload the visitor has been told not to bother with.
+              if (d.changed === true && Number(d.turnsLeft ?? 0) <= 0) setExhausted(true)
               break
           }
         })

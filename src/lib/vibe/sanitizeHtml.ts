@@ -36,6 +36,11 @@ const ALLOWED_IMAGE_ORIGINS = ['https://picsum.photos', 'https://fastly.picsum.p
  *  outright -- a mockup has no legitimate use for any of them. */
 const FORBIDDEN_TAGS = new Set([
   'base',
+  // parse5 stores a template's children on `.content`, not `childNodes`, so a
+  // recursive walk skips them entirely while serialize() still emits them --
+  // every rule below would be a no-op inside one. A mockup has no use for a
+  // template, so it is dropped rather than specially handled.
+  'template',
   'iframe',
   'frame',
   'frameset',
@@ -107,6 +112,12 @@ function originAllowed(url: string, origins: string[]): boolean {
   return origins.some((o) => url === o || url.startsWith(`${o}/`))
 }
 
+function imageUrlAllowed(url: string, allowImageCdn: boolean): boolean {
+  const u = url.trim()
+  if (u.startsWith('data:image/')) return true
+  return allowImageCdn && originAllowed(u, ALLOWED_IMAGE_ORIGINS)
+}
+
 function isTailwindCdn(url: string): boolean {
   return /^https:\/\/cdn\.tailwindcss\.com(\/|$)/.test(url)
 }
@@ -173,12 +184,29 @@ function sanitizeChildren(parent: ParentNode, collected: Collected, allowImageCd
 
     if (tag === 'img' || tag === 'source') {
       const src = getAttr(child, 'src')
-      const ok = src && (src.startsWith('data:image/') || (allowImageCdn && originAllowed(src, ALLOWED_IMAGE_ORIGINS)))
-      if (!ok) {
-        // Keep the element (layout depends on it) but blank the source, and give
-        // it a neutral background so the design does not collapse.
-        removeAttr(child, 'src')
-        removeAttr(child, 'srcset')
+      // <source> inside <picture> carries srcset and no src, so judging it on
+      // `src` alone would blank every legitimate one.
+      const srcset = getAttr(child, 'srcset')
+
+      const srcOk = src !== undefined && imageUrlAllowed(src, allowImageCdn)
+      if (src !== undefined && !srcOk) removeAttr(child, 'src')
+
+      if (srcset !== undefined) {
+        // Checked independently: stripping srcset only when `src` was rejected
+        // let an allowed src smuggle a disallowed srcset straight past.
+        const kept = srcset
+          .split(',')
+          .map((c) => c.trim())
+          .filter((c) => c && imageUrlAllowed(c.split(/\s+/)[0], allowImageCdn))
+          .join(', ')
+        if (kept) setAttr(child, 'srcset', kept)
+        else removeAttr(child, 'srcset')
+      }
+
+      const hasImage = (src !== undefined && srcOk) || getAttr(child, 'srcset') !== undefined
+      if (!hasImage) {
+        // Keep the element -- layout depends on it -- but give it a neutral
+        // background so the design does not collapse into nothing.
         const style = getAttr(child, 'style') ?? ''
         setAttr(child, 'style', `${style};background:#e5e7eb`.replace(/^;/, ''))
       }

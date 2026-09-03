@@ -206,3 +206,50 @@ describe('robustness', () => {
     expect(bytes).toBeGreaterThan(html.length)
   })
 })
+
+describe('template content', () => {
+  // parse5 hangs a template's children off `.content`, not `childNodes`, so a
+  // recursive walk that only follows childNodes skips every rule while
+  // serialize() still emits the markup. Template content is inert until cloned,
+  // and model-emitted inline JS can clone it.
+  it('drops a template smuggling a script, an iframe, a base and an off-site link', () => {
+    const { html } = sanitizeMockupHtml(
+      `<html><body><template>
+         <script src="https://evil.test/x.js"></script>
+         <iframe src="https://evil.test"></iframe>
+         <base href="https://evil.test/">
+         <a href="https://evil.test">click</a>
+         <meta http-equiv="refresh" content="0;url=https://evil.test">
+       </template></body></html>`,
+    )
+    expect(html).not.toContain('evil.test')
+    expect(html.toLowerCase()).not.toContain('<template')
+  })
+})
+
+describe('srcset', () => {
+  it('strips a disallowed srcset even when src is allowed', () => {
+    const { html } = sanitizeMockupHtml(
+      '<html><body><img src="https://picsum.photos/seed/a/80/80" srcset="https://evil.test/a.png 1x"></body></html>',
+    )
+    expect(html).not.toContain('evil.test')
+    expect(html).toContain('picsum.photos/seed/a/80/80')
+  })
+
+  it('keeps a <picture><source> whose srcset is allowed', () => {
+    // <source> has no src at all, so judging it on src alone blanked every
+    // legitimate one.
+    const { html } = sanitizeMockupHtml(
+      '<html><body><picture><source srcset="https://picsum.photos/seed/b/800/600"><img src="https://picsum.photos/seed/b/400/300" alt="b"></picture></body></html>',
+    )
+    expect(html).toContain('picsum.photos/seed/b/800/600')
+    expect(html).not.toContain('background:#e5e7eb')
+  })
+
+  it('drops a source whose srcset is not allowed', () => {
+    const { html } = sanitizeMockupHtml(
+      '<html><body><picture><source srcset="https://evil.test/a.png 2x"></picture></body></html>',
+    )
+    expect(html).not.toContain('evil.test')
+  })
+})

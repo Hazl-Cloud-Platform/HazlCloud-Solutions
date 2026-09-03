@@ -1,5 +1,5 @@
 import { currentAdmin } from '@/lib/vibe/adminAuth'
-import { listDesigns, staleDesignIds } from '@/lib/vibe/adminQueries'
+import { listDesigns, pruneLoginAttempts, staleDesignIds } from '@/lib/vibe/adminQueries'
 import { allDesignPaths, removeDesign } from '@/lib/vibe/designs'
 import { assertSameOrigin, badRequest, forbidden, ok, serverError, unauthorized } from '@/lib/vibe/http'
 import { deleteDesign, scanStorage } from '@/lib/vibe/storage'
@@ -50,6 +50,14 @@ export async function POST(req: Request) {
         removed += 1
       }
       return ok({ removed, orphans: stats.orphans.length })
+    }
+
+    if (body?.action === 'prune_logins') {
+      // Login attempts only matter inside a 15-minute window; everything older
+      // is ballast in a table an attacker can append to at will.
+      const days = Math.max(1, Math.min(365, Number(body.days) || 30))
+      const removed = await pruneLoginAttempts(days)
+      return ok({ removed })
     }
 
     return badRequest('Unknown action')

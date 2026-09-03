@@ -234,6 +234,23 @@ export function AdminConsole({ email }: { email: string }) {
             >
               Sweep orphan files
             </button>
+            <button
+              disabled={busy}
+              onClick={() =>
+                act(
+                  () =>
+                    fetch('/api/vibe/admin/designs', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'prune_logins', days: 30 }),
+                    }),
+                  'Old login attempts pruned.',
+                )
+              }
+              className="btn-outline rounded-lg px-3 py-1.5 text-[12.5px] font-semibold disabled:opacity-50"
+            >
+              Prune login log
+            </button>
           </div>
 
           {designs.length === 0 && <Empty>Nothing generated yet.</Empty>}

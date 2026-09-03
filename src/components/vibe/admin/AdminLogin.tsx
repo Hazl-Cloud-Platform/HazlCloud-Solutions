@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function AdminLogin({ emails }: { emails: string[] }) {
+export function AdminLogin() {
   const router = useRouter()
-  const [email, setEmail] = useState(emails[0] ?? '')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -46,29 +46,16 @@ export function AdminLogin({ emails }: { emails: string[] }) {
         <label htmlFor="admin-email" className="mt-6 block text-[11.5px] font-bold uppercase tracking-[.12em] text-white/40">
           Email
         </label>
-        {emails.length > 1 ? (
-          <select
-            id="admin-email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-2 w-full rounded-[10px] border border-white/15 bg-white/[0.03] px-3.5 py-3 text-[14px] text-white focus:border-white/35 focus:outline-none"
-          >
-            {emails.map((e) => (
-              <option key={e} value={e} className="bg-[#111]">
-                {e}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            id="admin-email"
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-2 w-full rounded-[10px] border border-white/15 bg-white/[0.03] px-3.5 py-3 text-[14px] text-white focus:border-white/35 focus:outline-none"
-          />
-        )}
+        <input
+          id="admin-email"
+          type="email"
+          required
+          autoFocus
+          autoComplete="username"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mt-2 w-full rounded-[10px] border border-white/15 bg-white/[0.03] px-3.5 py-3 text-[14px] text-white focus:border-white/35 focus:outline-none"
+        />
 
         <label htmlFor="admin-pw" className="mt-4 block text-[11.5px] font-bold uppercase tracking-[.12em] text-white/40">
           Password
@@ -77,7 +64,6 @@ export function AdminLogin({ emails }: { emails: string[] }) {
           id="admin-pw"
           type="password"
           required
-          autoFocus
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

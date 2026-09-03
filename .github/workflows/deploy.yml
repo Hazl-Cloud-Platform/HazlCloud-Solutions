@@ -65,7 +65,13 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://www.hazlsolutions.com
           NEXT_PUBLIC_VIBE_ENABLED: '1'
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
-        run: npm run build
+        run: |
+          if [ -z "${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}" ]; then
+            echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set. The studio CTA would be"
+            echo "live while every generation 403s. See docs/turnstile-setup.md."
+            exit 1
+          fi
+          npm run build
 
       - name: Check the neighbour is healthy BEFORE we touch anything
         run: |
@@ -104,15 +110,42 @@ jobs:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
         run: |
-          ssh "$USER@$HOST" bash -euo pipefail <<EOF
-            sudo -u hazl ln -sfn "$APP_ROOT/releases/$RELEASE" "$APP_ROOT/current.new"
-            sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
-            sudo cp "$APP_ROOT/current/deploy/hazl-solutions.service" /etc/systemd/system/
-            sudo systemctl daemon-reload
-            sudo systemctl restart hazl-solutions
-            # Keep the five most recent releases; older ones are rollback ballast.
-            cd "$APP_ROOT/releases" && ls -1t | tail -n +6 | xargs -r sudo rm -rf
-          EOF
+          set -euo pipefail
+          # Remember what was live so the failure handler can put it back.
+          PREVIOUS=$(ssh "$USER@$HOST" "readlink -f '$APP_ROOT/current' 2>/dev/null || true")
+          echo "PREVIOUS_RELEASE=$PREVIOUS" >> "$GITHUB_ENV"
+          echo "previous release: ${PREVIOUS:-<none>}"
+
+          # Quoted heredoc: the remote shell does the expansion, from values
+          # passed explicitly. With an unquoted one the RUNNER substitutes first,
+          # and an empty RELEASE would symlink `current` at the releases
+          # directory -- which the prune step below would then delete.
+          ssh "$USER@$HOST" "RELEASE='$RELEASE' APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          : "${RELEASE:?RELEASE is empty -- refusing to flip the symlink}"
+          : "${APP_ROOT:?APP_ROOT is empty}"
+          test -d "$APP_ROOT/releases/$RELEASE"
+
+          # Atomic swap: ln -sfn on an existing symlink-to-directory would nest.
+          ln -sfn "$APP_ROOT/releases/$RELEASE" "$APP_ROOT/current.new"
+          mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+          sudo systemctl restart hazl-solutions
+          REMOTE
+
+      # The systemd unit is deliberately NOT installed from the release tree.
+      # Copying it out of rsynced content and daemon-reloading would make push
+      # access to main equivalent to root on a box that also holds the Doppler
+      # service tokens. It is installed once by scripts/deploy/bootstrap-vm.sh;
+      # this only reports drift so a genuine change is applied deliberately.
+      - name: Warn if the systemd unit has drifted
+        continue-on-error: true
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          if ! ssh "$USER@$HOST" "diff -q /etc/systemd/system/hazl-solutions.service '$APP_ROOT/current/deploy/hazl-solutions.service'"; then
+            echo "::warning::deploy/hazl-solutions.service differs from the installed unit. Install it by hand after review."
+          fi
 
       - name: Smoke test this site
         run: |
@@ -122,6 +155,25 @@ jobs:
             echo "  attempt $i: $code"; sleep 5
           done
           echo "site did not come back up"; exit 1
+
+      - name: Roll back if the site did not come up
+        if: failure()
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          if [ -z "${PREVIOUS_RELEASE:-}" ]; then
+            echo "No previous release recorded -- nothing to roll back to."
+            exit 0
+          fi
+          echo "Rolling back to $PREVIOUS_RELEASE"
+          ssh "$USER@$HOST" "PREVIOUS='$PREVIOUS_RELEASE' APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          : "${PREVIOUS:?}"
+          ln -sfn "$PREVIOUS" "$APP_ROOT/current.new"
+          mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+          sudo systemctl restart hazl-solutions
+          REMOTE
 
       - name: Smoke test the neighbour
         # Only fails the run if WE broke it: if it was already down before the
@@ -133,6 +185,19 @@ jobs:
             echo "This deploy took down smswebpages.hazl.ca -- check the nginx config."
             exit 1
           fi
+
+      - name: Prune old releases
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          # Only after the smoke tests passed -- pruning before them would throw
+          # away the release we might need to roll back to.
+          ssh "$USER@$HOST" "APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_ROOT/releases"
+          ls -1t | tail -n +6 | xargs -r rm -rf
+          REMOTE
 
       - name: Verify the studio responds
         run: |

@@ -14,7 +14,7 @@ import {
   ipTurnsToday,
   releaseTurn,
 } from '@/lib/vibe/limits'
-import { tryWithLock, withGlobalSlot } from '@/lib/vibe/mutex'
+import { SLOTS_FULL, tryWithLock, withGlobalSlot } from '@/lib/vibe/mutex'
 import { getSession, markTurnstileVerified, mintSessionCookie, requireSession } from '@/lib/vibe/session'
 import { verifyTurnstile } from '@/lib/vibe/turnstile'
 import type { VibeEvent } from '@/types/vibe'
@@ -45,10 +45,21 @@ export async function POST(req: Request) {
     return badRequest(`Keep it under ${MAX_PROMPT_CHARS} characters — a sentence or two works best.`)
   }
 
-  const ip = clientIp(req)
-  const ipHash = requestIpHash(req)
+  let ip: string
+  let ipHash: string
+  let session: Awaited<ReturnType<typeof requireSession>>
+  try {
+    // Throws when VIBE_IP_SALT or VIBE_SESSION_SECRET is missing. That is a
+    // misconfiguration, not a client error, and should read like the rest of
+    // this module rather than an unhandled 500.
+    ip = clientIp(req)
+    ipHash = requestIpHash(req)
+    session = await requireSession(ipHash)
+  } catch (err) {
+    console.error('[vibe] chat preflight failed:', err)
+    return fail(503, 'The studio is not available right now.')
+  }
 
-  let session = await requireSession(ipHash)
   let setCookie: ReturnType<typeof mintSessionCookie> | null = null
 
   // Turnstile gates the first generation of a session and is re-challenged part
@@ -119,7 +130,10 @@ export async function POST(req: Request) {
       const deadline = AbortSignal.timeout(TURN_DEADLINE_MS)
       const signal = AbortSignal.any([req.signal, deadline])
 
-      let turnsLeft = 0
+      // Seeded from the session we already loaded. Left at 0, every early exit
+      // (busy, a transient throw) would emit done{turnsLeft:0} and the client
+      // would latch "that's the end of the free preview" mid-session.
+      let turnsLeft = Math.max(0, MAX_TURNS_PER_SESSION - session.turn_count)
       let changed = false
       let claimed = false
 
@@ -148,8 +162,11 @@ export async function POST(req: Request) {
               signal,
               emit,
             })
-            // The model never produced anything, so do not charge a turn for it.
-            if (!result.changed) {
+            // Refund the turn ONLY when nothing was billed. A turn that failed
+            // after spending (max_tokens, or a fallback that still came back
+            // malformed) has cost real money, and refunding it would make
+            // deliberately-failing prompts an unlimited free retry loop.
+            if (!result.changed && result.costUsd === 0) {
               await releaseTurn(sessionId).catch(() => {})
               turnsLeft = claim.turnsLeft + 1
             }
@@ -158,9 +175,16 @@ export async function POST(req: Request) {
         )
 
         if (outcome === null) {
+          // tryWithLock refused: this visitor already has a turn running.
           emit({ type: 'error', code: 'busy', message: 'You already have a change in progress — hang tight.' })
-        } else if (outcome === undefined) {
-          emit({ type: 'error', code: 'busy', message: 'The studio is busy right now. Try again in a few seconds.' })
+        } else if (outcome === SLOTS_FULL) {
+          // Every global slot is taken by OTHER visitors, which is a different
+          // situation and needs a different (and actionable) message.
+          emit({
+            type: 'error',
+            code: 'busy',
+            message: 'The studio is at capacity for a moment. Try again in a few seconds.',
+          })
         } else if (outcome.ran) {
           changed = outcome.changed
         }

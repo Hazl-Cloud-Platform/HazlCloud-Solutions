@@ -11,8 +11,16 @@ import { applySchema } from '../src/lib/vibe/schema'
 import { sslConfig } from '../src/lib/vibe/db'
 
 async function main() {
-  const url = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL
-  if (!url) throw new Error('MIGRATION_DATABASE_URL is not set (run under `doppler run -p hazl-general -c prd`)')
+  const url = process.env.MIGRATION_DATABASE_URL
+  if (!url) {
+    // Deliberately no fallback to DATABASE_URL: that points at Supabase's
+    // transaction pooler, which cannot hold a multi-statement DDL transaction.
+    // Falling back would half-apply the schema and look like it worked.
+    throw new Error(
+      'MIGRATION_DATABASE_URL is not set. It must be the DIRECT connection (port 5432), ' +
+        'not the pooler. Run under `doppler run -p hazl-general -c prd`.',
+    )
+  }
 
   const host = new URL(url).host
   console.log(`Applying Sol-Vibe-Code schema to ${host} ...`)

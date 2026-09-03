@@ -61,6 +61,19 @@ export async function requireSession(ipHash: string): Promise<SessionRow | null>
   return session
 }
 
+/** True once this session has spent its single full-rewrite rescue. */
+export async function hasUsedFallback(sessionId: string): Promise<boolean> {
+  const row = await queryOne<{ fallback_used: boolean }>(
+    `SELECT "fallback_used" FROM ${T.sessions} WHERE "id" = $1`,
+    [sessionId],
+  )
+  return Boolean(row?.fallback_used)
+}
+
+export async function markFallbackUsed(sessionId: string): Promise<void> {
+  await query(`UPDATE ${T.sessions} SET "fallback_used" = true WHERE "id" = $1`, [sessionId])
+}
+
 export async function markTurnstileVerified(sessionId: string): Promise<void> {
   await query(`UPDATE ${T.sessions} SET "turnstile_verified_at" = now() WHERE "id" = $1`, [sessionId])
 }

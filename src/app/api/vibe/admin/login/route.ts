@@ -9,8 +9,10 @@ export async function POST(req: Request) {
   if (!assertSameOrigin(req)) return forbidden('Cross-origin requests are not allowed')
   try {
     const body = (await req.json().catch(() => null)) as { email?: unknown; password?: unknown } | null
-    const email = typeof body?.email === 'string' ? body.email : ''
-    const password = typeof body?.password === 'string' ? body.password : ''
+    const email = typeof body?.email === 'string' ? body.email.slice(0, 254) : ''
+    // Bounded before any work: scrypt cost is independent of input length, but
+    // an unbounded field is still an unbounded row in the attempts table.
+    const password = typeof body?.password === 'string' ? body.password.slice(0, 512) : ''
     if (!email || !password) return badRequest('Email and password are required.')
 
     const result = await attemptLogin({ email, password, ipHash: requestIpHash(req) })

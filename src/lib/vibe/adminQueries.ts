@@ -59,9 +59,16 @@ export async function adminOverview(): Promise<AdminOverview> {
   }
 }
 
-/** Per-day spend. The window boundary is computed in JS and bound as a parameter,
- *  matching budget.ts -- doing it in SQL with AT TIME ZONE would resolve against
- *  the session TimeZone and shift the buckets. */
+/**
+ * Per-day spend.
+ *
+ * The window BOUNDARY is computed in JS and bound as a parameter, matching
+ * budget.ts. The per-row BUCKETING below uses `timestamptz AT TIME ZONE 'UTC'`,
+ * which is a different operation and is deterministic: it converts a known
+ * instant to UTC wall-clock. (The trap budget.ts documents is the reverse
+ * direction -- comparing a bare timestamp back against a timestamptz, which
+ * resolves against the session TimeZone.)
+ */
 export async function usageByDay(days: number): Promise<UsageDay[]> {
   const since = new Date(dayStartUtc().getTime() - (days - 1) * 86_400_000)
   const rows = await query<{
@@ -103,8 +110,11 @@ export async function usageByDay(days: number): Promise<UsageDay[]> {
  *  Above roughly 35% the edit protocol is costing more than it saves. */
 export async function fallbackRate(): Promise<{ edits: number; fallbacks: number; rate: number }> {
   const row = await queryOne<{ edits: number; fallbacks: number }>(
-    `SELECT count(*) FILTER (WHERE "kind" IN ('edit','edit_fallback'))::int AS edits,
-            count(*) FILTER (WHERE "kind" = 'edit_fallback')::int           AS fallbacks
+    // Denominator is edit TURNS (first attempts), not calls. A turn that falls
+    // back writes two rows -- one 'edit', one 'edit_fallback' -- so counting both
+    // kinds would cap the rate at 50% and make the 35% threshold unreachable.
+    `SELECT count(*) FILTER (WHERE "kind" = 'edit' AND "attempt" = 1)::int AS edits,
+            count(*) FILTER (WHERE "kind" = 'edit_fallback')::int          AS fallbacks
        FROM ${T.usage} WHERE "created_at" >= $1`,
     [monthStartUtc()],
   )
@@ -176,4 +186,14 @@ export async function staleDesignIds(days: number): Promise<string[]> {
     [days],
   )
   return rows.map((r) => r.id)
+}
+
+/** Login attempts are only consulted over a 15-minute window, so anything older
+ *  is dead weight in a table any anonymous caller can append to. */
+export async function pruneLoginAttempts(days: number): Promise<number> {
+  const rows = await query<{ id: string }>(
+    `DELETE FROM ${T.logins} WHERE "created_at" < now() - ($1::int * interval '1 day') RETURNING "id"`,
+    [days],
+  )
+  return rows.length
 }

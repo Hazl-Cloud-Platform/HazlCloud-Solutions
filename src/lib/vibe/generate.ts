@@ -6,7 +6,7 @@ import { applyEdits, extractTitle, parseModelOutput } from './edits'
 import { latestDesignHtml, saveDesign } from './designs'
 import { currentDocumentBlock, fallbackInstruction, nonceInstruction, SYSTEM_PROMPT } from './prompt'
 import { sanitizeMockupHtml } from './sanitizeHtml'
-import { appendTurn, loadTurns, recordFirstPrompt } from './session'
+import { appendTurn, hasUsedFallback, loadTurns, markFallbackUsed, recordFirstPrompt } from './session'
 import { MAX_HTML_BYTES } from './storage'
 import { recordUsage, UsageWriteError } from './usage'
 import type { UsageKind, VibeEvent } from '@/types/vibe'
@@ -41,22 +41,10 @@ export interface GenerateArgs {
 export interface GenerateResult {
   changed: boolean
   designId: string | null
-}
-
-/** One fallback per SESSION, not per turn: per-turn would let a visitor whose
- *  edits keep missing double the cost of every remaining turn. */
-function fallbackKey(sessionId: string): string {
-  return `vibe:fallback:${sessionId}`
-}
-function usedFallback(sessionId: string): boolean {
-  const g = globalThis as typeof globalThis & { __hazlVibeFallbacks?: Set<string> }
-  g.__hazlVibeFallbacks ??= new Set()
-  return g.__hazlVibeFallbacks.has(fallbackKey(sessionId))
-}
-function markFallbackUsed(sessionId: string): void {
-  const g = globalThis as typeof globalThis & { __hazlVibeFallbacks?: Set<string> }
-  g.__hazlVibeFallbacks ??= new Set()
-  g.__hazlVibeFallbacks.add(fallbackKey(sessionId))
+  /** What this turn actually cost. The caller refunds the visitor's turn only
+   *  when nothing was billed -- a failed turn that still spent $0.30 must not be
+   *  free to retry. */
+  costUsd: number
 }
 
 /** Set once per process when the gateway rejects output_config, so we stop
@@ -72,6 +60,7 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
   // Read the current document from disk. A missing file throws, which fails the
   // turn -- far better than silently rewriting from scratch at full price.
   const existing = await latestDesignHtml(sessionId)
+  let spentUsd = 0
   const mode: 'create' | 'edit' = existing ? 'edit' : 'create'
 
   if (existing && existing.html.length > MAX_SNAPSHOT_CHARS) {
@@ -80,7 +69,7 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
       code: 'bad_output',
       message: 'This design has grown too large to keep editing. Send it to our team and we will take it from here.',
     })
-    return { changed: false, designId: null }
+    return { changed: false, designId: null, costUsd: spentUsd }
   }
 
   await recordFirstPrompt(sessionId, userMessage)
@@ -111,7 +100,7 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
     const { block } = await checkBudget(sessionId)
     if (block) {
       emit({ type: 'error', code: block, message: limitMessage(block) })
-      return { changed: false, designId: null }
+      return { changed: false, designId: null, costUsd: spentUsd }
     }
 
     emit({
@@ -121,7 +110,8 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
     })
 
     const raw = await streamOnce({ client, model, messages, signal, emit, sessionId, turnIndex, kind, attempt })
-    if (raw === null) return { changed: false, designId: null }
+    spentUsd += raw?.costUsd ?? 0
+    if (raw === null) return { changed: false, designId: null, costUsd: spentUsd }
 
     const parsed = parseModelOutput(raw.text, nonce)
     if (parsed.note) emit({ type: 'note', delta: parsed.note })
@@ -136,7 +126,7 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
     if (parsed.kind === 'document') {
       const saved = await persist(sessionId, turnIndex, parsed.html, emit)
       await appendTurn({ sessionId, ipHash, role: 'assistant', content: parsed.note || 'Updated the page.' })
-      return { changed: true, designId: saved }
+      return { changed: true, designId: saved, costUsd: spentUsd }
     }
 
     if (parsed.kind === 'edits' && existing) {
@@ -145,27 +135,27 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
       if (applied.ok) {
         const saved = await persist(sessionId, turnIndex, applied.html, emit)
         await appendTurn({ sessionId, ipHash, role: 'assistant', content: parsed.note || 'Updated the page.' })
-        return { changed: true, designId: saved }
+        return { changed: true, designId: saved, costUsd: spentUsd }
       }
 
       // Logged unconditionally: the edit-vs-rewrite ratio is the single biggest
       // driver of what a session costs, and a silent fallback is invisible spend.
       console.warn(`[vibe] edit failed for session ${sessionId} turn ${turnIndex}: ${applied.reason}`)
 
-      if (usedFallback(sessionId)) {
+      if (await hasUsedFallback(sessionId)) {
         emit({
           type: 'error',
           code: 'bad_output',
           message: "That change did not apply cleanly. Try describing it a different way.",
         })
-        return { changed: false, designId: null }
+        return { changed: false, designId: null, costUsd: spentUsd }
       }
 
       // Recover by asking for a full rewrite, as a plain USER turn. Appending to
       // `messages` never invalidates the cached system prefix, so the
       // mid-conversation system message this originally used bought nothing and
       // is not supported on every gateway.
-      markFallbackUsed(sessionId)
+      await markFallbackUsed(sessionId)
       messages.push({ role: 'assistant', content: raw.text.slice(0, 4_000) })
       messages.push({ role: 'user', content: fallbackInstruction(nonce, applied.reason) })
       kind = 'edit_fallback'
@@ -174,11 +164,11 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
     }
 
     // Neither shape came back (or edits arrived with no document to patch).
-    if (usedFallback(sessionId) || mode === 'create') {
+    if ((await hasUsedFallback(sessionId)) || mode === 'create') {
       emit({ type: 'error', code: 'bad_output', message: 'The design came back malformed. Please try again.' })
-      return { changed: false, designId: null }
+      return { changed: false, designId: null, costUsd: spentUsd }
     }
-    markFallbackUsed(sessionId)
+    await markFallbackUsed(sessionId)
     const why = parsed.kind === 'none' ? parsed.reason : 'the reply contained edits but there is no page to edit yet'
     messages.push({ role: 'assistant', content: raw.text.slice(0, 4_000) })
     messages.push({ role: 'user', content: fallbackInstruction(nonce, why) })
@@ -187,7 +177,7 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
   }
 
   emit({ type: 'error', code: 'bad_output', message: 'The design came back malformed. Please try again.' })
-  return { changed: false, designId: null }
+  return { changed: false, designId: null, costUsd: spentUsd }
 }
 
 /** Sanitizes, writes to disk, records the row, and pushes the result to the client. */
@@ -214,7 +204,7 @@ interface StreamArgs {
 
 /** One API call, fully billed whether or not it completes. Returns null when the
  *  turn cannot continue (the caller has already been told why). */
-async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
+async function streamOnce(args: StreamArgs): Promise<{ text: string; costUsd: number } | null> {
   const { client, model, messages, signal, emit } = args
 
   const system: Anthropic.TextBlockParam[] = [
@@ -231,7 +221,12 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
     max_tokens: maxOutputTokens(),
     system,
     messages,
-    thinking: { type: 'adaptive' as const },
+    // display:'summarized' rather than the default 'omitted'. Thinking tokens are
+    // billed as output either way; with them omitted they stream as empty deltas,
+    // so the abort estimator below counted zero for them and an always-abort
+    // visitor was systematically under-billed. It also keeps the progress bar and
+    // token counter alive through the thinking phase instead of frozen at zero.
+    thinking: { type: 'adaptive' as const, display: 'summarized' as const },
     ...(effort ? { output_config: { effort } } : {}),
   } as Anthropic.MessageStreamParams
 
@@ -253,9 +248,11 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
 
   const streamed: { usage: Anthropic.Usage | null; chars: number } = { usage: null, chars: 0 }
   let lastTick = 0
-  const tick = (extraOutput: number, force = false) => {
+  /** Returns true when a frame was actually emitted, so `progress` can share the
+   *  same throttle instead of firing on every delta. */
+  const tick = (extraOutput: number, force = false): boolean => {
     const now = Date.now()
-    if (!force && now - lastTick < USAGE_TICK_MS) return
+    if (!force && now - lastTick < USAGE_TICK_MS) return false
     lastTick = now
     const u = streamed.usage
     const input = u?.input_tokens ?? 0
@@ -270,6 +267,7 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
       cacheCreationTokens: cacheWrite,
       totalTokens: input + output + cacheRead + cacheWrite,
     })
+    return true
   }
 
   stream.on('streamEvent', (event: Anthropic.MessageStreamEvent) => {
@@ -292,12 +290,14 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
               : 0
       // message_delta only arrives at the very end, so without a character-based
       // estimate the counter would sit frozen through the whole generation.
-      tick(Math.round(streamed.chars / CHARS_PER_TOKEN))
-      emit({
-        type: 'progress',
-        bytes: text.length,
-        pct: Math.min(96, Math.round((text.length / 18_000) * 100)),
-      })
+      const ticked = tick(Math.round(streamed.chars / CHARS_PER_TOKEN))
+      if (ticked) {
+        emit({
+          type: 'progress',
+          bytes: text.length,
+          pct: Math.min(96, Math.round((text.length / 18_000) * 100)),
+        })
+      }
     }
   })
 
@@ -329,8 +329,9 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
     throw err
   }
 
+  let costUsd = 0
   try {
-    const { costUsd, usage } = await recordUsage({
+    const recorded = await recordUsage({
       sessionId: args.sessionId,
       model,
       kind: args.kind,
@@ -338,7 +339,13 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
       attempt: args.attempt,
       usage: msg.usage,
     })
-    emit({ type: 'usage', costUsd, inputTokens: usage.input_tokens, outputTokens: usage.output_tokens })
+    costUsd = recorded.costUsd
+    emit({
+      type: 'usage',
+      costUsd,
+      inputTokens: recorded.usage.input_tokens,
+      outputTokens: recorded.usage.output_tokens,
+    })
   } catch (err) {
     // The budget gate sums this same table, so a swallowed write failure would
     // make spend invisible AND the gate blind at the same moment. Refuse to
@@ -364,5 +371,5 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string } | null> {
     return null
   }
 
-  return { text }
+  return { text, costUsd }
 }

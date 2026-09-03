@@ -86,7 +86,7 @@ the secret without the dashboard. `npx wrangler turnstile widget create "HAZL Vi
 
 | Where | What |
 |---|---|
-| `src/lib/vibe/turnstile.ts` | Server-side `siteverify`. Fails **closed**: a missing secret in production returns 503, and a network error or a 5-second timeout counts as a failure — a Cloudflare blip must never become an hour of unmetered LLM access. |
+| `src/lib/vibe/turnstile.ts` | Server-side `siteverify`. Fails **closed**: a missing secret in production makes every generation 403, and a network error or a 5-second timeout counts as a failure — a Cloudflare blip must never become an hour of unmetered LLM access. |
 | `src/components/vibe/TurnstileGate.tsx` | Client widget, via `@marsidev/react-turnstile` (the package Cloudflare explicitly endorses; they publish no official React guide). |
 | `src/app/api/vibe/chat/route.ts` | Challenges the first generation of a session **and re-challenges after two turns**. Gating only the very first turn would leave the expensive later turns behind a challenge that costs a bot a fraction of a cent. |
 

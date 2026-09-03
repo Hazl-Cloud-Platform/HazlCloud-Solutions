@@ -43,32 +43,37 @@ export function normalizeIp(raw: string): string {
 }
 
 /**
- * Resolves the caller's address from proxy headers.
+ * Resolves the caller's address.
  *
- * VIBE_TRUST_PROXY must only be set where a proxy we control rewrites these
- * headers -- otherwise they are attacker-supplied and every per-IP cap is bypassed
- * by sending a different X-Forwarded-For each time.
+ * Forwarded headers are attacker-supplied unless a proxy WE control overwrites
+ * them, so this is deliberately exclusive rather than a fallback chain: reading
+ * `x-forwarded-for` when we are not behind a trusted proxy would let anyone mint
+ * a fresh identity per request and make every per-IP cap decorative.
+ *
+ * VIBE_TRUST_PROXY=1 requires nginx to SET (not append) the header:
+ *
+ *   proxy_set_header X-Real-IP        $remote_addr;
+ *   proxy_set_header X-Forwarded-For  $remote_addr;
+ *   proxy_set_header CF-Connecting-IP "";
+ *
+ * `$proxy_add_x_forwarded_for` APPENDS to whatever the client sent, so the
+ * left-most entry would still be attacker-controlled -- which is why only
+ * `x-real-ip` is trusted here.
  */
 export function clientIp(req: Request): string {
-  const h = req.headers
-  const trustProxy = process.env.VIBE_TRUST_PROXY === '1'
-
-  if (trustProxy) {
-    // Set by Cloudflare when the record is proxied (orange cloud). Ours is
-    // DNS-only today, so this is normally absent -- but if the proxy is ever
-    // switched on, nginx MUST also be given Cloudflare's ranges via
-    // ngx_http_realip_module, or every visitor collapses to one edge IP.
-    const cf = h.get('cf-connecting-ip')?.trim()
-    if (cf) return cf
-    const real = h.get('x-real-ip')?.trim()
-    if (real) return real
+  if (process.env.VIBE_TRUST_PROXY !== '1') {
+    // Direct exposure (or an untrusted proxy). There is no header we can believe,
+    // so everyone shares one bucket rather than everyone getting a free one.
+    return 'unknown'
   }
 
-  const xff = h.get('x-forwarded-for')
-  if (xff) {
-    const first = xff.split(',')[0]?.trim()
-    if (first) return first
-  }
+  const real = req.headers.get('x-real-ip')?.trim()
+  if (real) return real
+
+  // Only meaningful once nginx's real_ip block is enabled for Cloudflare's
+  // ranges; until then $remote_addr already IS the visitor and x-real-ip covers
+  // it. Deliberately not consulted before x-real-ip: an unproxied deployment
+  // forwards this header verbatim from the client.
   return 'unknown'
 }
 
