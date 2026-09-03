@@ -1,0 +1,306 @@
+# Build and deploy the site to EC2 instance i-01392620086308e29
+# (3.132.59.166, us-east-2) -- a t3.micro shared with the sites listed under
+# NEIGHBOUR_URLS below. Verified on the host: 912 MB RAM, port 3002 free, and
+# this app measures ~135 MB resident, so it fits with roughly 350 MB to spare.
+#
+# NOTE ON DNS: www.hazlsolutions.com does not point at this VM yet. This
+# workflow ships the release and verifies it ON THE BOX; it does not by itself
+# make the public site come from here. Flip DNS only once a release has proven
+# healthy, and keep the previous target as a one-record rollback until the VM
+# has served real traffic for a day (bootstrap-vm.sh, step 5).
+#
+# NO APPLICATION SECRETS LIVE IN GITHUB. The repository holds only what is needed
+# to reach the box (an SSH key and the host's public key); the VM itself holds two
+# read-only Doppler service tokens and resolves database, storage and LLM
+# credentials at service start. See scripts/deploy/bootstrap-vm.sh.
+#
+# The build steps below are not a pre-merge report -- with no pull_request
+# trigger they are the gate between a merged commit and production, so every one
+# of them is fatal and the release symlink is never repointed on failure.
+# Pull requests to main are checked by ci.yml instead; deploying an unmerged
+# branch to this box would let anyone who can open a PR replace the live site.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Lets a known-good commit be redeployed (or the box rebuilt) without an empty
+  # commit. Still deploys whatever main points at, never another ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never let two deploys interleave: the second would repoint `current` under the
+# first one's restart. cancel-in-progress stays false because a half-finished
+# rsync is worse than a queued run.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  APP_ROOT: /srv/hazl-solutions
+  # Port the app binds on loopback. bootstrap-vm.sh defaults to 3002 and refuses
+  # to provision if it is taken; if it picked another port on this box, set the
+  # APP_PORT repo variable to match or the smoke test below will report a
+  # healthy deploy as dead.
+  APP_PORT: ${{ vars.APP_PORT || '3002' }}
+  # Co-tenants on THIS box, probed before and after so a shared-nginx mistake
+  # cannot take one down unnoticed. All four were confirmed to resolve to
+  # 3.132.59.166, so a deploy here really can affect them. Two Node services
+  # back them (fruttagala on 3000, gmaps-sms on 3001); the other two are served
+  # from the same nginx.
+  NEIGHBOUR_URLS: >-
+    https://smswebpages.hazl.ca
+    https://fruttagala.ca
+    https://nexgen-flha.hazl.ca
+    https://nexgen-flha-pembina.hazl.ca
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      # Matches the environment configured on the repo, which is capitalised.
+      # This is where the EC2_* secrets live.
+      name: Production
+      url: https://www.hazlsolutions.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck, lint, test
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+
+      - name: Build
+        # No secrets here on purpose: every module reads env lazily inside
+        # functions, so a build that needs a secret is a bug this step catches.
+        # NEXT_PUBLIC_* values are INLINED into the bundle by `next build` and
+        # cannot be changed afterwards, so every one the app needs at runtime has
+        # to be present here. Setting them in Doppler alone is not enough: the
+        # service reads Doppler at start, but the browser bundle was already
+        # frozen. These are public identifiers, not secrets, hence repo `vars`.
+        env:
+          NEXT_PUBLIC_SITE_URL: https://www.hazlsolutions.com
+          NEXT_PUBLIC_VIBE_ENABLED: '1'
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
+        run: |
+          missing=""
+          for v in NEXT_PUBLIC_TURNSTILE_SITE_KEY NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET; do
+            [ -z "${!v:-}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing build-time public config:$missing"
+            echo
+            echo "These are inlined at build time and cannot be fixed by Doppler at runtime."
+            echo "Without the Turnstile key every generation 403s while the CTA stays live;"
+            echo "without the Sanity ids /insights renders empty and /studio gets no config."
+            echo "Set them with: gh variable set <NAME> --body <value>"
+            exit 1
+          fi
+          npm run build
+
+      - name: Check the neighbours are healthy BEFORE we touch anything
+        run: |
+          before=""
+          for u in $NEIGHBOUR_URLS; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)
+            echo "  $u -> $code"
+            before="$before $u=$code"
+          done
+          echo "NEIGHBOURS_BEFORE=$before" >> "$GITHUB_ENV"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Pinned host key, never StrictHostKeyChecking=no.
+          echo "${{ secrets.EC2_HOST_KEY }}" > ~/.ssh/known_hosts
+
+      - name: Ship the release
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -euo pipefail
+          RELEASE="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
+          TARGET="$APP_ROOT/releases/$RELEASE"
+
+          ssh "$USER@$HOST" "sudo -u hazl mkdir -p '$TARGET'"
+          # .next, node_modules, package files, and the deploy assets. The
+          # storage volume lives outside the release tree and is never touched.
+          #
+          # .next/cache is excluded deliberately: it is webpack's build cache,
+          # used only by `next build` and never read by `next start`. Locally it
+          # is 624 MB of a 648 MB .next, so shipping it would make each release
+          # ~930 MB and the five retained releases ~4.5 GB on a 20 GB disk.
+          # Without it a release is ~330 MB.
+          rsync -az --delete-after \
+            --exclude='.next/cache' \
+            --rsync-path="sudo -u hazl rsync" \
+            .next node_modules public package.json package-lock.json next.config.js deploy \
+            "$USER@$HOST:$TARGET/"
+
+      - name: Flip the symlink and restart
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -euo pipefail
+          # Remember what was live so the failure handler can put it back.
+          PREVIOUS=$(ssh "$USER@$HOST" "readlink -f '$APP_ROOT/current' 2>/dev/null || true")
+          echo "PREVIOUS_RELEASE=$PREVIOUS" >> "$GITHUB_ENV"
+          echo "previous release: ${PREVIOUS:-<none>}"
+
+          # Quoted heredoc: the remote shell does the expansion, from values
+          # passed explicitly. With an unquoted one the RUNNER substitutes first,
+          # and an empty RELEASE would symlink `current` at the releases
+          # directory -- which the prune step below would then delete.
+          ssh "$USER@$HOST" "RELEASE='$RELEASE' APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          : "${RELEASE:?RELEASE is empty -- refusing to flip the symlink}"
+          : "${APP_ROOT:?APP_ROOT is empty}"
+          test -d "$APP_ROOT/releases/$RELEASE"
+
+          # The unit must already exist. bootstrap-vm.sh installs it from a
+          # checkout; if it is missing, say so instead of failing on a bare
+          # "unit not found" from systemctl.
+          if ! systemctl cat hazl-solutions >/dev/null 2>&1; then
+            echo "hazl-solutions.service is not installed. Run scripts/deploy/bootstrap-vm.sh on this host first." >&2
+            exit 1
+          fi
+
+          # $APP_ROOT is owned by `hazl` (see bootstrap-vm.sh), and the SSH user
+          # is someone else -- these mutate the release tree, so they run as the
+          # owner exactly like the rsync step does.
+          # Atomic swap: ln -sfn on an existing symlink-to-directory would nest.
+          sudo -u hazl ln -sfn "$APP_ROOT/releases/$RELEASE" "$APP_ROOT/current.new"
+          sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+          sudo systemctl restart hazl-solutions
+          REMOTE
+
+      # The systemd unit is deliberately NOT installed from the release tree.
+      # Copying it out of rsynced content and daemon-reloading would make push
+      # access to main equivalent to root on a box that also holds the Doppler
+      # service tokens. It is installed once by scripts/deploy/bootstrap-vm.sh;
+      # this only reports drift so a genuine change is applied deliberately.
+      - name: Warn if the systemd unit has drifted
+        continue-on-error: true
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          if ! ssh "$USER@$HOST" "diff -q /etc/systemd/system/hazl-solutions.service '$APP_ROOT/current/deploy/hazl-solutions.service'"; then
+            echo "::warning::deploy/hazl-solutions.service differs from the installed unit. Install it by hand after review."
+          fi
+
+      # Tests the app we just deployed, on the box we just deployed to.
+      #
+      # This used to curl the public URL, which does not resolve to this host,
+      # so it returned 200 no matter what happened here -- a dead release, a
+      # service that never started, even an empty release directory would all
+      # have been reported as a successful deploy. The app's own port on the
+      # target box is the only check that can actually fail. Point it back at
+      # the public URL once DNS resolves here.
+      - name: Smoke test the release on the box
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -euo pipefail
+          ssh "$USER@$HOST" "APP_PORT='$APP_PORT' bash -s" <<'REMOTE'
+          set -uo pipefail
+          : "${APP_PORT:?APP_PORT is empty -- refusing to smoke test an unknown port}"
+          for i in $(seq 1 20); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "http://127.0.0.1:$APP_PORT/startup" || echo 000)
+            if [ "$code" = "200" ]; then echo "app up on 127.0.0.1:$APP_PORT ($code)"; exit 0; fi
+            echo "  attempt $i: $code"
+            sleep 5
+          done
+          echo "app did not come up on 127.0.0.1:$APP_PORT" >&2
+          systemctl is-active hazl-solutions || true
+          journalctl -u hazl-solutions -n 40 --no-pager || true
+          exit 1
+          REMOTE
+
+      - name: Roll back if the site did not come up
+        if: failure()
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          if [ -z "${PREVIOUS_RELEASE:-}" ]; then
+            echo "No previous release recorded -- nothing to roll back to."
+            exit 0
+          fi
+          echo "Rolling back to $PREVIOUS_RELEASE"
+          ssh "$USER@$HOST" "PREVIOUS='$PREVIOUS_RELEASE' APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          : "${PREVIOUS:?}"
+          sudo -u hazl ln -sfn "$PREVIOUS" "$APP_ROOT/current.new"
+          sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+          sudo systemctl restart hazl-solutions
+          REMOTE
+
+      - name: Smoke test the neighbours
+        # Only fails the run if WE broke one: a site that was already down before
+        # the deploy is someone else's problem and not a reason to block.
+        run: |
+          broke=""
+          for u in $NEIGHBOUR_URLS; do
+            was=$(echo "$NEIGHBOURS_BEFORE" | tr ' ' '\n' | grep -F "$u=" | cut -d= -f2)
+            now=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)
+            echo "  $u -> $now (before: ${was:-?})"
+            if [ "$was" = "200" ] && [ "$now" != "200" ]; then broke="$broke $u"; fi
+          done
+          if [ -n "$broke" ]; then
+            echo "::error::This deploy took down:$broke -- check the shared nginx config."
+            exit 1
+          fi
+
+      - name: Prune old releases
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          # Only after the smoke tests passed -- pruning before them would throw
+          # away the release we might need to roll back to.
+          ssh "$USER@$HOST" "APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_ROOT/releases"
+          ls -1t | tail -n +6 | xargs -r sudo -u hazl rm -rf
+          REMOTE
+
+      - name: Verify the studio responds
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          code=$(ssh "$USER@$HOST" "curl -sS -o /dev/null -w '%{http_code}' --max-time 15 'http://127.0.0.1:$APP_PORT/startup/studio'" || echo 000)
+          echo "studio on the box: $code (404 is expected while VIBE_ENABLED is unset)"
+
+      # Informational only. Until DNS points here this reports on whatever else
+      # serves the domain, not on this box, so it must never fail the run.
+      - name: Report what the public URL is actually serving
+        continue-on-error: true
+        run: |
+          echo "www.hazlsolutions.com resolves to:"
+          getent hosts www.hazlsolutions.com || true
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://www.hazlsolutions.com/startup || echo 000)
+          echo "public /startup -> $code (served by whatever DNS points at, which is not this box yet)"

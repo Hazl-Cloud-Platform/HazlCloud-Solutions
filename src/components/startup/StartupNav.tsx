@@ -2,9 +2,14 @@
 
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
-import { CTA_URL } from './data'
+import { CTA_URL, STUDIO_URL } from './data'
+
+// NEXT_PUBLIC_ because /startup is statically rendered: the server-only
+// VIBE_ENABLED would be read once at build time and silently frozen.
+const STUDIO_LIVE = process.env.NEXT_PUBLIC_VIBE_ENABLED === '1'
 
 const LINKS = [
+  ...(STUDIO_LIVE ? [{ href: STUDIO_URL, label: 'Try it now' }] : []),
   { href: '#how', label: 'How it works' },
   { href: '#examples', label: 'What we build' },
   { href: '#pricing', label: 'Pricing' },
