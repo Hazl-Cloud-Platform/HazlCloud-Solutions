@@ -225,6 +225,12 @@ does not exist.
   so the injected CSP is provably first and `<base>` / `<meta refresh>` cannot survive.
 - **The HTML is not secret.** There is no download button, but anyone who opens DevTools can read
   the document. What the absence of a download buys is friction and framing, not protection.
+- **A mockup can navigate its own frame.** Inline script is allowed so mockups can switch tabs and
+  open modals, and no CSP directive governs `location.assign` — so a visitor can ask the model for
+  a page that redirects itself. This is accepted because a frame is only ever shown to the person
+  who prompted it (the session cookie is signed and IP-bound, and there is no share link). **If
+  sharing is ever added, this must be revisited** — either drop `'unsafe-inline'` from `script-src`
+  or serve mockups from a separate origin.
 - Visitor IPs are never stored — only an HMAC of the /32 (IPv4) or /64 (IPv6) block.
 
 ---

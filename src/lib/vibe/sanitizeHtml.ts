@@ -166,9 +166,19 @@ function sanitizeChildren(parent: ParentNode, collected: Collected, allowImageCd
 
     if (tag === 'a') {
       const href = getAttr(child, 'href')
-      // Sandbox flags gate TOP-LEVEL navigation, but a link can still navigate
-      // the frame itself -- which would replace the mockup with a stranger's site
-      // inside our chrome. No CSP directive covers that, so neutralise the href.
+      // Sandbox flags gate TOP-LEVEL navigation; a link can still navigate the
+      // frame itself, so an off-site href would swap the mockup for a stranger's
+      // page inside our chrome. Neutralising it removes the accidental case.
+      //
+      // It does NOT make self-navigation impossible: inline script is permitted
+      // by design (mockups need tab switching and modals), and no CSP directive
+      // governs location.assign -- `navigate-to` was removed from the spec. A
+      // visitor who asks the model for a redirect gets one. That is accepted
+      // rather than fixed, because the frame is only ever shown to the person
+      // who prompted it: the session cookie is signed and IP-bound, there is no
+      // sharing feature, and no third party can be sent to someone else's frame.
+      // If a share link is ever added, this stops being acceptable -- either drop
+      // 'unsafe-inline' from script-src or serve mockups from a separate origin.
       if (!href || !href.startsWith('#')) setAttr(child, 'href', '#')
       removeAttr(child, 'target')
       removeAttr(child, 'download')
