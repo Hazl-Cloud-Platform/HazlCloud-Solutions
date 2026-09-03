@@ -1,0 +1,49 @@
+# systemd unit for the HAZL Solutions site (including the Vibe Studio).
+#
+# Secrets are NOT in this file and not in the environment of the deploy user.
+# The box holds two read-only Doppler service tokens under /etc/hazl/ and
+# resolves credentials itself at start, so a copy of this unit leaks nothing.
+#
+# Install: /etc/systemd/system/hazl-solutions.service
+[Unit]
+Description=HAZL Solutions (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hazl
+Group=hazl
+WorkingDirectory=/srv/hazl-solutions/current
+
+# Two nested doppler run invocations, matching scripts/run-with-doppler.sh.
+# The INNER config wins on a key collision, which is why `npm run vibe:check`
+# asserts the resolved DATABASE_URL host.
+EnvironmentFile=/etc/hazl/doppler.env
+ExecStart=/usr/bin/doppler run --token "${DOPPLER_TOKEN_GENERAL}" -- \
+          /usr/bin/doppler run --token "${DOPPLER_TOKEN_LLM}" -- \
+          /usr/bin/node node_modules/.bin/next start --port 3000
+
+Restart=always
+RestartSec=3
+# Generation turns run 60-100s; give in-flight requests time to finish.
+TimeoutStopSec=120
+KillSignal=SIGTERM
+
+# Hardening. ReadWritePaths is the storage volume: generated documents are the
+# source of truth and must survive, so the rest of the filesystem is read-only.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/hazl-vibe /srv/hazl-solutions
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hazl-solutions
+
+[Install]
+WantedBy=multi-user.target

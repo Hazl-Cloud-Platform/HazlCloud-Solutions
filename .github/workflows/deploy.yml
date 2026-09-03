@@ -1,0 +1,140 @@
+# Build and deploy the site to the EC2 host that serves www.hazlsolutions.com.
+#
+# NO APPLICATION SECRETS LIVE IN GITHUB. The repository holds only what is needed
+# to reach the box (an SSH key and the host's public key); the VM itself holds two
+# read-only Doppler service tokens and resolves database, storage and LLM
+# credentials at service start. See scripts/deploy/bootstrap-vm.sh.
+#
+# The build steps below are not a pre-merge report -- with no pull_request
+# trigger they are the gate between a merged commit and production, so every one
+# of them is fatal and the release symlink is never repointed on failure.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Lets a known-good commit be redeployed (or the box rebuilt) without an empty
+  # commit. Still deploys whatever main points at, never another ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never let two deploys interleave: the second would repoint `current` under the
+# first one's restart. cancel-in-progress stays false because a half-finished
+# rsync is worse than a queued run.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  APP_ROOT: /srv/hazl-solutions
+  # This VM is shared. If a change to the shared nginx config takes the
+  # neighbouring app down, the deploy should fail loudly rather than silently.
+  NEIGHBOUR_URL: https://smswebpages.hazl.ca
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://www.hazlsolutions.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck, lint, test
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+
+      - name: Build
+        # No secrets here on purpose: every module reads env lazily inside
+        # functions, so a build that needs a secret is a bug this step catches.
+        env:
+          NEXT_PUBLIC_SITE_URL: https://www.hazlsolutions.com
+          NEXT_PUBLIC_VIBE_ENABLED: '1'
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+        run: npm run build
+
+      - name: Check the neighbour is healthy BEFORE we touch anything
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$NEIGHBOUR_URL" || echo 000)
+          echo "neighbour before deploy: $code"
+          echo "NEIGHBOUR_BEFORE=$code" >> "$GITHUB_ENV"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Pinned host key, never StrictHostKeyChecking=no.
+          echo "${{ secrets.EC2_HOST_KEY }}" > ~/.ssh/known_hosts
+
+      - name: Ship the release
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -euo pipefail
+          RELEASE="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
+          TARGET="$APP_ROOT/releases/$RELEASE"
+
+          ssh "$USER@$HOST" "sudo -u hazl mkdir -p '$TARGET'"
+          # .next, node_modules, package files, and the deploy assets. The
+          # storage volume lives outside the release tree and is never touched.
+          rsync -az --delete-after \
+            --rsync-path="sudo -u hazl rsync" \
+            .next node_modules public package.json package-lock.json next.config.js deploy \
+            "$USER@$HOST:$TARGET/"
+
+      - name: Flip the symlink and restart
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          ssh "$USER@$HOST" bash -euo pipefail <<EOF
+            sudo -u hazl ln -sfn "$APP_ROOT/releases/$RELEASE" "$APP_ROOT/current.new"
+            sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+            sudo cp "$APP_ROOT/current/deploy/hazl-solutions.service" /etc/systemd/system/
+            sudo systemctl daemon-reload
+            sudo systemctl restart hazl-solutions
+            # Keep the five most recent releases; older ones are rollback ballast.
+            cd "$APP_ROOT/releases" && ls -1t | tail -n +6 | xargs -r sudo rm -rf
+          EOF
+
+      - name: Smoke test this site
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://www.hazlsolutions.com/startup || echo 000)
+            [ "$code" = "200" ] && echo "site up ($code)" && exit 0
+            echo "  attempt $i: $code"; sleep 5
+          done
+          echo "site did not come back up"; exit 1
+
+      - name: Smoke test the neighbour
+        # Only fails the run if WE broke it: if it was already down before the
+        # deploy, that is someone else's problem and not a reason to block.
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$NEIGHBOUR_URL" || echo 000)
+          echo "neighbour after deploy: $code (before: $NEIGHBOUR_BEFORE)"
+          if [ "$NEIGHBOUR_BEFORE" = "200" ] && [ "$code" != "200" ]; then
+            echo "This deploy took down smswebpages.hazl.ca -- check the nginx config."
+            exit 1
+          fi
+
+      - name: Verify the studio responds
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://www.hazlsolutions.com/startup/studio || echo 000)
+          echo "studio: $code (404 is expected while VIBE_ENABLED is unset)"

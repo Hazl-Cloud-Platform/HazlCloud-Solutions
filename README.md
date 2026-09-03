@@ -146,6 +146,89 @@ Set the same env vars in your process manager (systemd, PM2, Docker, etc.) and p
 
 ---
 
+## Vibe Studio (`/startup/studio`)
+
+A public, anonymous UI-mockup builder. A visitor describes an app, an LLM returns a single
+self-contained HTML document, and it renders in a sandboxed iframe. It is deliberately
+**presentational only** — fake data, no working backend — because the product pitch is that
+turning a demo into a real product is the work HAZL does. The exit is "Contact our team",
+which captures an email and keeps the design.
+
+### It cannot run on Vercel
+
+Generated documents are stored **on the filesystem** (Postgres holds only the pointer), a first
+generation takes 60–100 seconds, and the concurrency limiter is per process. All three break on
+serverless. The feature is therefore gated behind `VIBE_ENABLED=1` and ships dark until the VM
+deployment is live. See `scripts/deploy/bootstrap-vm.sh` and `.github/workflows/deploy.yml`.
+
+### Running it locally
+
+```bash
+npm run dev:vibe     # layers both Doppler configs, then next dev
+```
+
+which is:
+
+```bash
+doppler run -p hazl-general -c prd -- \
+  doppler run -p dr-keys -c prd_llm_opus4-8 -- next dev
+```
+
+You also need `VIBE_ENABLED=1`, `NEXT_PUBLIC_VIBE_ENABLED=1` and a writable `VIBE_STORAGE_DIR`.
+Turnstile verification is skipped outside production, so no Cloudflare account is needed to
+develop. Every variable is documented in `.env.example`.
+
+### Commands
+
+| Command | What it does |
+|---|---|
+| `npm run vibe:migrate` | Applies the schema (seven `Sol-Vibe-Code_*` tables) under an advisory lock. Idempotent. |
+| `npm run vibe:check` | Table counts, settings, month-to-date spend, and asserts which database host resolved. |
+| `npm run vibe:probe` | Probes the Anthropic gateway: streaming, prompt caching, `output_config.effort`, and which parameters it rejects. **Run this before changing the agent.** |
+| `npm run vibe:smoke` | Runs one real generation end to end and prints the cost ledger. Pass a session id to exercise the edit path. |
+| `npm run vibe:hash` | Produces the admin password hash. Never prints the plaintext. |
+
+### What it costs
+
+Measured against the live gateway, not estimated:
+
+| | Output tokens | Cost |
+|---|---|---|
+| First generation | 5.2k–6.2k | **$0.15–0.17** |
+| Surgical edit | ~170 | **$0.04** |
+| Broad restyle (rewrites) | ~6.3k | **$0.19** |
+| Failed edit + fallback | two calls | **$0.43** |
+
+A real five-turn session lands around **$0.45–0.70**. Spending is capped three ways, all
+re-checked before *every* model call: monthly (default $100), daily (default $8, so one viral
+day cannot black out the rest of the month), and per session ($1.00). Both budgets are editable
+at `/vibe/admin`.
+
+### Admin
+
+`/vibe/admin`, reached by clicking the small dot in the studio's status bar seven times, or with
+`Ctrl+Shift+Alt+H`. The URL works directly — the hidden trigger is discovery, not security. It
+shows spend against both budgets, leads, stored designs, per-day usage, and the SEARCH/REPLACE
+fallback rate.
+
+Access is one shared password across `VIBE_ADMIN_EMAILS`, so the signed-in name is
+self-asserted rather than proven; the console says so instead of implying an audit trail that
+does not exist.
+
+### Security notes
+
+- The preview iframe is `sandbox="allow-scripts"` and nothing else. Adding `allow-same-origin`
+  would cancel the sandbox — `srcDoc` inherits the embedder's origin, so model-written code
+  driven by a stranger's prompt could read cookies, call the admin API with an admin's session,
+  or rewrite the parent page under our own certificate.
+- Generated HTML is **reconstructed** with `parse5`, not scrubbed with regexes: we own `<head>`,
+  so the injected CSP is provably first and `<base>` / `<meta refresh>` cannot survive.
+- **The HTML is not secret.** There is no download button, but anyone who opens DevTools can read
+  the document. What the absence of a download buys is friction and framing, not protection.
+- Visitor IPs are never stored — only an HMAC of the /32 (IPv4) or /64 (IPv6) block.
+
+---
+
 ## Sanity webhook (on-demand revalidation)
 
 `/api/revalidate` revalidates the right paths/tags whenever an `insight` document is created, updated, or deleted.
