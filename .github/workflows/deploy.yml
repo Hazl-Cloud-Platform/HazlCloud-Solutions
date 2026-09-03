@@ -1,4 +1,12 @@
-# Build and deploy the site to the EC2 host that serves www.hazlsolutions.com.
+# Build and deploy the site to EC2 instance i-01392620086308e29
+# (3.132.59.166, us-east-2) -- a t3.micro shared with the sites listed under
+# NEIGHBOUR_URLS below. Verified on the host: 912 MB RAM, port 3002 free, and
+# this app measures ~135 MB resident, so it fits with roughly 350 MB to spare.
+#
+# NOTE ON DNS: www.hazlsolutions.com still resolves to Vercel. This workflow
+# ships the release to the VM and verifies it there; it does NOT make the public
+# site come from the VM. Flip DNS only after a release has proven healthy here,
+# and keep Vercel as the one-record rollback (bootstrap-vm.sh, step 5).
 #
 # NO APPLICATION SECRETS LIVE IN GITHUB. The repository holds only what is needed
 # to reach the box (an SSH key and the host's public key); the VM itself holds two
@@ -8,6 +16,8 @@
 # The build steps below are not a pre-merge report -- with no pull_request
 # trigger they are the gate between a merged commit and production, so every one
 # of them is fatal and the release symlink is never repointed on failure.
+# Pull requests to main are checked by ci.yml instead; deploying an unmerged
+# branch to this box would let anyone who can open a PR replace the live site.
 name: Deploy
 
 on:
@@ -29,9 +39,16 @@ concurrency:
 
 env:
   APP_ROOT: /srv/hazl-solutions
-  # This VM is shared with FOUR other production sites (verified on the host).
-  # A mistake in the shared nginx config takes them down, so every one is probed
-  # before and after a deploy and the run fails if we broke one that was up.
+  # Port the app binds on loopback. bootstrap-vm.sh defaults to 3002 and refuses
+  # to provision if it is taken; if it picked another port on this box, set the
+  # APP_PORT repo variable to match or the smoke test below will report a
+  # healthy deploy as dead.
+  APP_PORT: ${{ vars.APP_PORT || '3002' }}
+  # Co-tenants on THIS box, probed before and after so a shared-nginx mistake
+  # cannot take one down unnoticed. All four were confirmed to resolve to
+  # 3.132.59.166, so a deploy here really can affect them. Two Node services
+  # back them (fruttagala on 3000, gmaps-sms on 3001); the other two are served
+  # from the same nginx.
   NEIGHBOUR_URLS: >-
     https://smswebpages.hazl.ca
     https://fruttagala.ca
@@ -44,7 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
-      name: production
+      # Matches the environment configured on the repo, which is capitalised.
+      # This is where the EC2_* secrets live.
+      name: Production
       url: https://www.hazlsolutions.com
 
     steps:
@@ -125,7 +144,14 @@ jobs:
           ssh "$USER@$HOST" "sudo -u hazl mkdir -p '$TARGET'"
           # .next, node_modules, package files, and the deploy assets. The
           # storage volume lives outside the release tree and is never touched.
+          #
+          # .next/cache is excluded deliberately: it is webpack's build cache,
+          # used only by `next build` and never read by `next start`. Locally it
+          # is 624 MB of a 648 MB .next, so shipping it would make each release
+          # ~930 MB and the five retained releases ~4.5 GB on a 20 GB disk.
+          # Without it a release is ~330 MB.
           rsync -az --delete-after \
+            --exclude='.next/cache' \
             --rsync-path="sudo -u hazl rsync" \
             .next node_modules public package.json package-lock.json next.config.js deploy \
             "$USER@$HOST:$TARGET/"
@@ -183,14 +209,33 @@ jobs:
             echo "::warning::deploy/hazl-solutions.service differs from the installed unit. Install it by hand after review."
           fi
 
-      - name: Smoke test this site
+      # Tests the app we just deployed, on the box we just deployed to.
+      #
+      # This used to curl https://www.hazlsolutions.com/startup. That name
+      # resolves to Vercel, so it returned 200 no matter what happened here --
+      # a dead release, a service that never started, even an empty release
+      # directory would all have been reported as a successful deploy. Point it
+      # back at the public URL once DNS actually resolves to this host.
+      - name: Smoke test the release on the box
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
         run: |
+          set -euo pipefail
+          ssh "$USER@$HOST" "APP_PORT='$APP_PORT' bash -s" <<'REMOTE'
+          set -uo pipefail
+          : "${APP_PORT:?APP_PORT is empty -- refusing to smoke test an unknown port}"
           for i in $(seq 1 20); do
-            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://www.hazlsolutions.com/startup || echo 000)
-            [ "$code" = "200" ] && echo "site up ($code)" && exit 0
-            echo "  attempt $i: $code"; sleep 5
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "http://127.0.0.1:$APP_PORT/startup" || echo 000)
+            if [ "$code" = "200" ]; then echo "app up on 127.0.0.1:$APP_PORT ($code)"; exit 0; fi
+            echo "  attempt $i: $code"
+            sleep 5
           done
-          echo "site did not come back up"; exit 1
+          echo "app did not come up on 127.0.0.1:$APP_PORT" >&2
+          systemctl is-active hazl-solutions || true
+          journalctl -u hazl-solutions -n 40 --no-pager || true
+          exit 1
+          REMOTE
 
       - name: Roll back if the site did not come up
         if: failure()
@@ -241,6 +286,19 @@ jobs:
           REMOTE
 
       - name: Verify the studio responds
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
         run: |
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://www.hazlsolutions.com/startup/studio || echo 000)
-          echo "studio: $code (404 is expected while VIBE_ENABLED is unset)"
+          code=$(ssh "$USER@$HOST" "curl -sS -o /dev/null -w '%{http_code}' --max-time 15 'http://127.0.0.1:$APP_PORT/startup/studio'" || echo 000)
+          echo "studio on the box: $code (404 is expected while VIBE_ENABLED is unset)"
+
+      # Informational only. Until DNS is flipped this reports on Vercel, not on
+      # the box, so it must never fail the run.
+      - name: Report what the public URL is actually serving
+        continue-on-error: true
+        run: |
+          echo "www.hazlsolutions.com resolves to:"
+          getent hosts www.hazlsolutions.com || true
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://www.hazlsolutions.com/startup || echo 000)
+          echo "public /startup -> $code (served by whatever DNS points at, which is not this box yet)"

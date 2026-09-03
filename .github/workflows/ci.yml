@@ -3,7 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+  # Pre-merge gate. Scoped to PRs that target main so a PR between two topic
+  # branches does not burn a runner on a merge that cannot reach production.
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read
