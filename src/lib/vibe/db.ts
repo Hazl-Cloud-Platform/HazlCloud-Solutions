@@ -17,6 +17,44 @@ import { SUPABASE_ROOT_CA } from './supabaseCa'
 pg.types.setTypeParser(1700, (v) => (v === null ? null : Number.parseFloat(v)))
 pg.types.setTypeParser(20, (v) => (v === null ? null : Number(v)))
 
+/**
+ * Query parameters that make node-postgres build its OWN ssl config and throw
+ * away the object we pass. Verified: with `?sslmode=require`, an explicit
+ * `{ ca, rejectUnauthorized }` is replaced by `{}` -- which silently discards the
+ * pinned Supabase CA and leaves the connection failing certificate validation
+ * against their private root.
+ */
+const SSL_URL_PARAMS = ['ssl', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert', 'sslpassword', 'uselibpqcompat']
+
+/**
+ * Removes SSL parameters from a connection string so `sslConfig()` stays
+ * authoritative. Everything else about the URL is left untouched.
+ *
+ * Our current Doppler values carry no query string at all, so this is a guard
+ * against someone later "hardening" the URL by appending `?sslmode=require` and
+ * thereby weakening it.
+ */
+export function stripSslParams(connectionString: string): string {
+  try {
+    const url = new URL(connectionString)
+    let changed = false
+    for (const key of SSL_URL_PARAMS) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key)
+        changed = true
+      }
+    }
+    if (!changed) return connectionString
+    // URL#toString re-encodes an empty query as a bare '?', which pg tolerates
+    // but which reads badly in logs.
+    return url.searchParams.size === 0 ? url.toString().replace(/\?$/, '') : url.toString()
+  } catch {
+    // Not a parseable URL (a libpq keyword/value string, say). Leave it alone --
+    // sslConfig's regex still sees the original text.
+    return connectionString
+  }
+}
+
 export const T = {
   sessions: '"Sol-Vibe-Code_sessions"',
   turns: '"Sol-Vibe-Code_turns"',
@@ -75,7 +113,8 @@ export function getPool(): pg.Pool {
   if (!connectionString) throw new Error('DATABASE_URL is not set (run under `doppler run -p hazl-general -c prd`)')
 
   const pool = new pg.Pool({
-    connectionString,
+    // Stripped so the ssl object below is what actually applies.
+    connectionString: stripSslParams(connectionString),
     ssl: sslConfig(connectionString),
     // Each Node process gets its own pool and the app is a single VM process,
     // so a small ceiling is plenty and keeps room for the neighbouring app on

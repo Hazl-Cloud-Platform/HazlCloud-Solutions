@@ -8,7 +8,7 @@
  */
 import { Client } from 'pg'
 import { applySchema } from '../src/lib/vibe/schema'
-import { sslConfig } from '../src/lib/vibe/db'
+import { sslConfig, stripSslParams } from '../src/lib/vibe/db'
 
 async function main() {
   const url = process.env.MIGRATION_DATABASE_URL
@@ -25,7 +25,7 @@ async function main() {
   const host = new URL(url).host
   console.log(`Applying Sol-Vibe-Code schema to ${host} ...`)
 
-  const client = new Client({ connectionString: url, ssl: sslConfig(url) })
+  const client = new Client({ connectionString: stripSslParams(url), ssl: sslConfig(url) })
   await client.connect()
   try {
     await applySchema(client)

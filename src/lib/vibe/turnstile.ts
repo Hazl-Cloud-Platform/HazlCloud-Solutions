@@ -71,8 +71,14 @@ export async function verifyTurnstile(args: {
 
   // A valid token issued for someone else's site is still a valid token, so the
   // hostname has to be checked rather than assumed.
+  //
+  // The widget allowlists `localhost` so development works, which means anyone
+  // can render OUR public site key on their own localhost and mint real tokens.
+  // Accepting hostname 'localhost' in production would therefore hand out a
+  // trivial bypass of the whole check, so the exemption is dev-only.
   const expectedHost = siteHostname()
-  if (expectedHost && data.hostname && data.hostname !== expectedHost && data.hostname !== 'localhost') {
+  const hostAllowed = (host: string) => host === expectedHost || (!turnstileRequired() && host === 'localhost')
+  if (expectedHost && data.hostname && !hostAllowed(data.hostname)) {
     return { ok: false, reason: `hostname-mismatch:${data.hostname}` }
   }
   if (args.expectedAction && data.action && data.action !== args.expectedAction) {

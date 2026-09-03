@@ -55,3 +55,4 @@ describe('password hashing', () => {
     expect(128 * Number(N) * Number(r)).toBeLessThan(32 * 1024 * 1024)
   })
 })
+

@@ -7,7 +7,7 @@
  * defined DATABASE_URL, we would silently be writing to the wrong database.
  */
 import { Client } from 'pg'
-import { sslConfig } from '../src/lib/vibe/db'
+import { sslConfig, stripSslParams } from '../src/lib/vibe/db'
 
 const TABLES = [
   'Sol-Vibe-Code_sessions',
@@ -29,7 +29,7 @@ async function main() {
     console.warn(`WARNING: ${host} does not look like the HAZL Supabase instance.`)
   }
 
-  const client = new Client({ connectionString: url, ssl: sslConfig(url) })
+  const client = new Client({ connectionString: stripSslParams(url), ssl: sslConfig(url) })
   await client.connect()
   try {
     let missing = 0

@@ -61,14 +61,30 @@ jobs:
       - name: Build
         # No secrets here on purpose: every module reads env lazily inside
         # functions, so a build that needs a secret is a bug this step catches.
+        # NEXT_PUBLIC_* values are INLINED into the bundle by `next build` and
+        # cannot be changed afterwards, so every one the app needs at runtime has
+        # to be present here. Setting them in Doppler alone is not enough: the
+        # service reads Doppler at start, but the browser bundle was already
+        # frozen. These are public identifiers, not secrets, hence repo `vars`.
         env:
           NEXT_PUBLIC_SITE_URL: https://www.hazlsolutions.com
           NEXT_PUBLIC_VIBE_ENABLED: '1'
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
         run: |
-          if [ -z "${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}" ]; then
-            echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set. The studio CTA would be"
-            echo "live while every generation 403s. See docs/turnstile-setup.md."
+          missing=""
+          for v in NEXT_PUBLIC_TURNSTILE_SITE_KEY NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET; do
+            [ -z "${!v:-}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing build-time public config:$missing"
+            echo
+            echo "These are inlined at build time and cannot be fixed by Doppler at runtime."
+            echo "Without the Turnstile key every generation 403s while the CTA stays live;"
+            echo "without the Sanity ids /insights renders empty and /studio gets no config."
+            echo "Set them with: gh variable set <NAME> --body <value>"
             exit 1
           fi
           npm run build
@@ -126,9 +142,20 @@ jobs:
           : "${APP_ROOT:?APP_ROOT is empty}"
           test -d "$APP_ROOT/releases/$RELEASE"
 
+          # The unit must already exist. bootstrap-vm.sh installs it from a
+          # checkout; if it is missing, say so instead of failing on a bare
+          # "unit not found" from systemctl.
+          if ! systemctl cat hazl-solutions >/dev/null 2>&1; then
+            echo "hazl-solutions.service is not installed. Run scripts/deploy/bootstrap-vm.sh on this host first." >&2
+            exit 1
+          fi
+
+          # $APP_ROOT is owned by `hazl` (see bootstrap-vm.sh), and the SSH user
+          # is someone else -- these mutate the release tree, so they run as the
+          # owner exactly like the rsync step does.
           # Atomic swap: ln -sfn on an existing symlink-to-directory would nest.
-          ln -sfn "$APP_ROOT/releases/$RELEASE" "$APP_ROOT/current.new"
-          mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+          sudo -u hazl ln -sfn "$APP_ROOT/releases/$RELEASE" "$APP_ROOT/current.new"
+          sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
           sudo systemctl restart hazl-solutions
           REMOTE
 
@@ -170,8 +197,8 @@ jobs:
           ssh "$USER@$HOST" "PREVIOUS='$PREVIOUS_RELEASE' APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
           set -euo pipefail
           : "${PREVIOUS:?}"
-          ln -sfn "$PREVIOUS" "$APP_ROOT/current.new"
-          mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
+          sudo -u hazl ln -sfn "$PREVIOUS" "$APP_ROOT/current.new"
+          sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
           sudo systemctl restart hazl-solutions
           REMOTE
 
@@ -196,7 +223,7 @@ jobs:
           ssh "$USER@$HOST" "APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$APP_ROOT/releases"
-          ls -1t | tail -n +6 | xargs -r rm -rf
+          ls -1t | tail -n +6 | xargs -r sudo -u hazl rm -rf
           REMOTE
 
       - name: Verify the studio responds

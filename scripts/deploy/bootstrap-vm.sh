@@ -53,13 +53,27 @@ command -v nginx >/dev/null 2>&1 || dnf install -y nginx || yum install -y nginx
 systemctl enable --now nginx
 
 echo "==> systemd unit"
-if [ -f "$APP_ROOT/current/deploy/hazl-solutions.service" ]; then
-  cp "$APP_ROOT/current/deploy/hazl-solutions.service" /etc/systemd/system/hazl-solutions.service
-  systemctl daemon-reload
-  systemctl enable hazl-solutions
-else
-  echo "    (no release deployed yet -- install the unit after the first deploy)"
+# Installed from THIS repository, not from $APP_ROOT/current.
+#
+# Reading it from the deployed release was a bootstrap cycle: on a fresh host
+# there is no `current`, so no unit was installed -- yet the very first deploy
+# runs `systemctl restart hazl-solutions`, which fails with "unit not found".
+# It also kept the unit inside rsynced content, which would make push access to
+# main equivalent to root on a box holding the Doppler service tokens.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+UNIT_SRC="$SCRIPT_DIR/../../deploy/hazl-solutions.service"
+
+if [ ! -f "$UNIT_SRC" ]; then
+  echo "ERROR: cannot find deploy/hazl-solutions.service relative to this script." >&2
+  echo "Run bootstrap-vm.sh from a checkout of the repository, e.g.:" >&2
+  echo "    git clone <repo> /tmp/hazl && sudo bash /tmp/hazl/scripts/deploy/bootstrap-vm.sh" >&2
+  exit 1
 fi
+
+install -m 0644 "$UNIT_SRC" /etc/systemd/system/hazl-solutions.service
+systemctl daemon-reload
+systemctl enable hazl-solutions
+echo "    installed /etc/systemd/system/hazl-solutions.service"
 
 if [ ! -f "$SECRETS_DIR/doppler.env" ]; then
   cat > "$SECRETS_DIR/doppler.env" <<'ENVEOF'
@@ -93,4 +107,8 @@ cat <<'NEXT'
         curl -sS -o /dev/null -w '%{http_code}\n' https://smswebpages.hazl.ca
   5. Deploy from CI, then flip DNS to this host. Keep Vercel intact as a
      one-record rollback until the VM has served real traffic for a day.
+
+  The service will not start until step 1 and step 2 are done -- it has no
+  credentials before then. That is expected; the first CI deploy is what puts a
+  release under $APP_ROOT/current for it to run.
 NEXT

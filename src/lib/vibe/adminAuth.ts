@@ -1,7 +1,7 @@
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import { cookies } from 'next/headers'
-import { T, query, queryOne } from './db'
+import { T, query, transaction, withAdvisoryLock } from './db'
 import { getAdminSessionEpoch } from './settings'
 import { cookieName, nowSeconds, secureCookies, signToken, verifyToken } from './signing'
 
@@ -113,26 +113,54 @@ export async function attemptLogin(args: { email: string; password: string; ipHa
   const stored = process.env.VIBE_ADMIN_PASSWORD_HASH
   if (!stored) return { ok: false, status: 500, error: 'Admin access is not configured.' }
 
-  // Counted BEFORE any scrypt work, so a flood of guesses cannot also be a
-  // CPU-exhaustion attack against the box serving generations.
-  const recent = await queryOne<{ mine: number; everyone: number }>(
-    `SELECT count(*) FILTER (WHERE "ip_hash" = $1)::int AS mine,
-            count(*)::int                               AS everyone
-       FROM ${T.logins}
-      WHERE "ok" = false AND "created_at" > now() - interval '${FAILURE_WINDOW}'`,
-    [args.ipHash],
+  const email = args.email.trim().toLowerCase().slice(0, MAX_EMAIL_CHARS)
+
+  // Count and RESERVE in one locked transaction, before any scrypt work.
+  //
+  // Counting and then inserting after the password check is a TOCTOU race: a
+  // burst of concurrent requests all read a count below the limit, all proceed,
+  // and all run 16 MiB scrypt -- so the throttle fails at exactly the moment it
+  // is under attack, and doubles as a CPU-exhaustion vector against the box
+  // serving generations. The row is written up front as a failure and flipped to
+  // success afterwards, so a slot is consumed even if the process dies mid-check.
+  //
+  // One global lock key rather than per-IP: logins are rare enough that
+  // serialising them costs nothing, and it makes the cross-IP counter exact too.
+  const attemptId = await transaction(async (client) =>
+    withAdvisoryLock(client, 'vibe:login', async () => {
+      const { rows } = await client.query<{ mine: number; everyone: number }>(
+        `SELECT count(*) FILTER (WHERE "ip_hash" = $1)::int AS mine,
+                count(*)::int                               AS everyone
+           FROM ${T.logins}
+          WHERE "ok" = false AND "created_at" > now() - interval '${FAILURE_WINDOW}'`,
+        [args.ipHash],
+      )
+      const mine = Number(rows[0]?.mine ?? 0)
+      const everyone = Number(rows[0]?.everyone ?? 0)
+      if (mine >= MAX_FAILURES || everyone >= MAX_GLOBAL_FAILURES) return null
+
+      const inserted = await client.query<{ id: string }>(
+        `INSERT INTO ${T.logins} ("ip_hash","email","ok") VALUES ($1,$2,false) RETURNING "id"`,
+        [args.ipHash, email],
+      )
+      return inserted.rows[0].id
+    }),
   )
-  if (Number(recent?.mine ?? 0) >= MAX_FAILURES || Number(recent?.everyone ?? 0) >= MAX_GLOBAL_FAILURES) {
+
+  if (attemptId === null) {
     return { ok: false, status: 429, error: 'Too many attempts. Try again in 15 minutes.' }
   }
 
-  const email = args.email.trim().toLowerCase().slice(0, MAX_EMAIL_CHARS)
   const known = isAdminEmail(email)
   // Verify against a dummy hash for an unknown email so both paths cost the same.
   const passwordOk = await verifyPassword(args.password, known ? stored : await dummyHash())
   const success = known && passwordOk
 
-  await query(`INSERT INTO ${T.logins} ("ip_hash","email","ok") VALUES ($1,$2,$3)`, [args.ipHash, email, success])
+  if (success) {
+    // Clear the reservation so a successful sign-in never counts toward the
+    // lockout -- otherwise five ordinary logins would lock an admin out.
+    await query(`UPDATE ${T.logins} SET "ok" = true WHERE "id" = $1`, [attemptId]).catch(() => {})
+  }
 
   if (!success) return { ok: false, status: 401, error: 'Email or password is incorrect.' }
 
