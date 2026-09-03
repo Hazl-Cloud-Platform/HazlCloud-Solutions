@@ -17,6 +17,15 @@ export async function saveDesign(args: {
   html: string
   title: string
 }): Promise<DesignRow> {
+  // Whatever occupied this turn before, so its file can be cleaned up once the
+  // replacement is safely committed. A fallback rewrite reuses the turn index but
+  // gets a fresh design id, so without this the superseded file stays on disk
+  // forever with no row pointing at it.
+  const previous = await queryOne<{ file_path: string }>(
+    `SELECT "file_path" FROM ${T.designs} WHERE "session_id" = $1 AND "turn_index" = $2`,
+    [args.sessionId, args.turnIndex],
+  )
+
   const written = await writeDesign(args.sessionId, args.turnIndex, args.designId, args.html)
 
   // UNIQUE(session_id, turn_index): a full-rewrite fallback REPLACES the failed
@@ -31,6 +40,16 @@ export async function saveDesign(args: {
     [args.designId, args.sessionId, args.turnIndex, args.title, written.relativePath, written.bytes, written.sha256],
   )
   if (!row) throw new Error('failed to record the design')
+
+  // Only after the row commits, and only if the path actually changed. Best
+  // effort: a failure here leaves an orphan, which the admin sweep handles --
+  // whereas failing the turn would lose a design the visitor already has.
+  if (previous && previous.file_path !== written.relativePath) {
+    await deleteDesign(previous.file_path).catch((err: unknown) => {
+      console.warn('[vibe] could not remove superseded design file', previous.file_path, err)
+    })
+  }
+
   return row
 }
 
