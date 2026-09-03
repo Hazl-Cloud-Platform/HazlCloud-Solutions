@@ -164,7 +164,22 @@ jobs:
         run: |
           set -euo pipefail
           # Remember what was live so the failure handler can put it back.
-          PREVIOUS=$(ssh "$USER@$HOST" "readlink -f '$APP_ROOT/current' 2>/dev/null || true")
+          #
+          # `readlink -f` was wrong here: it canonicalises a path whose final
+          # component does not exist, so on the FIRST deploy -- when `current`
+          # has never been created -- it printed "$APP_ROOT/current" instead of
+          # nothing. The rollback handler then saw a non-empty PREVIOUS and
+          # pointed `current` at itself, leaving a self-referential symlink that
+          # every later deploy and the service both choke on.
+          #
+          # Read the link literally instead, and only accept a target that is a
+          # real directory inside releases/.
+          PREVIOUS=$(ssh "$USER@$HOST" "
+            t=\$(readlink '$APP_ROOT/current' 2>/dev/null || true)
+            case \"\$t\" in
+              '$APP_ROOT'/releases/?*) [ -d \"\$t\" ] && printf '%s' \"\$t\" ;;
+            esac
+          ")
           echo "PREVIOUS_RELEASE=$PREVIOUS" >> "$GITHUB_ENV"
           echo "previous release: ${PREVIOUS:-<none>}"
 
@@ -253,6 +268,14 @@ jobs:
           ssh "$USER@$HOST" "PREVIOUS='$PREVIOUS_RELEASE' APP_ROOT='$APP_ROOT' bash -s" <<'REMOTE'
           set -euo pipefail
           : "${PREVIOUS:?}"
+          # Second line of defence against pointing `current` at itself: refuse
+          # anything that is not a real release directory. A self-referential
+          # symlink here is worse than no rollback at all.
+          case "$PREVIOUS" in
+            "$APP_ROOT"/releases/?*) ;;
+            *) echo "refusing to roll back to '$PREVIOUS': not a release path" >&2; exit 1 ;;
+          esac
+          test -d "$PREVIOUS" || { echo "refusing: '$PREVIOUS' is not a directory" >&2; exit 1; }
           sudo -u hazl ln -sfn "$PREVIOUS" "$APP_ROOT/current.new"
           sudo -u hazl mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
           sudo systemctl restart hazl-solutions

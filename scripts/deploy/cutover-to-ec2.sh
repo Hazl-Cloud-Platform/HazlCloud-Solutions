@@ -67,16 +67,28 @@ for u in "${NEIGHBOURS[@]}"; do
 done
 
 say "Cloudflare credentials (never echoed, never stored)"
-printf '    Cloudflare API token with Zone:DNS:Edit on %s: ' "$ZONE_NAME"
+echo "    The zone lives in a Cloudflare account that Anthony.tam@hazl.ca cannot"
+echo "    see (its /api/v4/zones returns zero zones), so the token has to come"
+echo "    from whoever owns the zone. Leave this blank to flip DNS by hand instead."
+printf '    Cloudflare API token with Zone:DNS:Edit on %s (or blank): ' "$ZONE_NAME"
 read -rs CF_TOKEN; echo
-[ -n "$CF_TOKEN" ] || { echo "    ABORT: no token given" >&2; exit 1; }
 
-cf() { curl -sS -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" "$@"; }
+MANUAL_DNS=0
 CF_API=https://api.cloudflare.com/client/v4
+cf() { curl -sS -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" "$@"; }
 
-ZONE_ID="$(cf "$CF_API/zones?name=$ZONE_NAME" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(r["result"][0]["id"] if r.get("result") else "")')"
-[ -n "$ZONE_ID" ] || { echo "    ABORT: token cannot see zone $ZONE_NAME" >&2; exit 1; }
-echo "    zone id: ${ZONE_ID:0:8}..."
+if [ -z "$CF_TOKEN" ]; then
+  MANUAL_DNS=1
+  echo "    no token given -- step 3 will pause for a manual DNS change"
+else
+  ZONE_ID="$(cf "$CF_API/zones?name=$ZONE_NAME" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(r["result"][0]["id"] if r.get("result") else "")')"
+  if [ -z "$ZONE_ID" ]; then
+    echo "    ABORT: that token cannot see zone $ZONE_NAME." >&2
+    echo "    It must be issued from the Cloudflare account that holds the zone." >&2
+    exit 1
+  fi
+  echo "    zone id: ${ZONE_ID:0:8}..."
+fi
 
 say "step 1/5: rate-limit zone (vhost depends on it; must exist before nginx -t)"
 printf '%s\n' \
@@ -108,9 +120,29 @@ echo "    reloaded. verifying over HTTP without touching DNS:"
 printf '    www via --resolve -> %s\n' \
   "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 --resolve "www.$ZONE_NAME:80:$HOST" "http://www.$ZONE_NAME/startup" || echo 000)"
 
-say "step 3/5: flipping Cloudflare DNS to $HOST (grey cloud / DNS-only)"
-cf "$CF_API/zones/$ZONE_ID/dns_records?per_page=100" > "$BACKUP_DIR/records-before.json"
-echo "    original records saved to .dns-backup/records-before.json"
+say "step 3/5: pointing DNS at $HOST (grey cloud / DNS-only)"
+
+if [ "$MANUAL_DNS" = 1 ]; then
+  cat <<MANUAL
+    Make these two changes in the Cloudflare account that owns $ZONE_NAME:
+
+      www.$ZONE_NAME   A   $HOST   TTL 60   Proxy: DNS only (grey cloud)
+      $ZONE_NAME       A   $HOST   TTL 60   Proxy: DNS only (grey cloud)
+
+    www is a CNAME to Vercel today, so its type changes from CNAME to A.
+    Write down what the two records were first -- that is the rollback.
+
+    Grey cloud matters: deploy/nginx/hazl-solutions.conf reads \$remote_addr
+    directly for per-IP limits. Behind the orange cloud every visitor would
+    collapse into a handful of Cloudflare edge IPs and the per-IP caps would
+    become global caps.
+
+MANUAL
+  printf '    Press Enter once both records are saved (Ctrl-C to abort): '
+  read -r _
+else
+  cf "$CF_API/zones/$ZONE_ID/dns_records?per_page=100" > "$BACKUP_DIR/records-before.json"
+  echo "    original records saved to .dns-backup/records-before.json"
 
 flip() {
   local name="$1" id
@@ -124,15 +156,22 @@ flip() {
   fi
   python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print("    "+sys.argv[2]+" -> "+("OK" if r.get("success") else "FAILED "+json.dumps(r.get("errors"))))' "$TMP/out.json" "$name"
 }
-flip "www.$ZONE_NAME"
-flip "$ZONE_NAME"
+  flip "www.$ZONE_NAME"
+  flip "$ZONE_NAME"
+fi
 
 echo "    waiting for DNS to point here (TTL 60s)..."
 for i in $(seq 1 40); do
   got="$(dig +short "www.$ZONE_NAME" A @1.1.1.1 | tail -1)"
   [ "$got" = "$HOST" ] && { echo "    resolves to $got"; break; }
   sleep 5
-  [ "$i" = 40 ] && { echo "    ABORT: DNS did not converge; records are in .dns-backup" >&2; exit 1; }
+  if [ "$i" = 40 ]; then
+    echo "    ABORT: www.$ZONE_NAME still does not resolve to $HOST." >&2
+    [ "$MANUAL_DNS" = 1 ] \
+      && echo "    Nothing here changed DNS, so there is nothing to undo." >&2 \
+      || echo "    Previous records are in .dns-backup/records-before.json." >&2
+    exit 1
+  fi
 done
 
 say "step 4/5: certificate via HTTP-01 (nginx authenticator, RPM certbot untouched)"
@@ -174,8 +213,9 @@ done
 cat <<'DONE'
 
 Cutover complete. Vercel is still deployed but no longer receives traffic --
-that is your rollback. Restore it by pointing the two records in
-.dns-backup/records-before.json back, which is a one-record change.
+that is your rollback, and restoring it is a DNS change, nothing more. If the
+API path ran, the previous records are in .dns-backup/records-before.json; if
+DNS was changed by hand, use the values you noted before editing.
 
 Leave it that way until the VM has served real traffic for a day. Only then
 delete the Vercel project.

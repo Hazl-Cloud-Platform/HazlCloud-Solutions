@@ -44,6 +44,22 @@ MemoryMax=320M
 # gateway, so this only bites during a scrypt burst or an HTML parse storm.
 CPUWeight=50
 
+# The Doppler CLI creates a config directory under $HOME on EVERY invocation,
+# even when the token is passed on the command line. ProtectHome=true below
+# makes /home unreachable inside this unit's namespace, so the default
+# HOME=/home/hazl fails with
+#     Doppler Error: mkdir /home/hazl/.doppler: permission denied
+# and, with Restart=always, the unit crash-loops instead of starting. The
+# on-disk permissions of /home/hazl are irrelevant -- it is the namespace that
+# hides it, which is why this reproduces only under systemd and not under a
+# plain `sudo -u hazl`.
+#
+# RuntimeDirectory gives /run/hazl-solutions, created on start owned by User=
+# and removed on stop. /run is untouched by ProtectHome and is made writable
+# despite ProtectSystem=strict, so it needs no ReadWritePaths entry.
+RuntimeDirectory=hazl-solutions
+Environment=HOME=/run/hazl-solutions
+
 # Hardening. ReadWritePaths is the storage volume: generated documents are the
 # source of truth and must survive, so the rest of the filesystem is read-only.
 NoNewPrivileges=true
