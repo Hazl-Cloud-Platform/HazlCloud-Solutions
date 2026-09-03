@@ -26,7 +26,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Sanity not configured yet — emit core routes only
   }
 
+  // Gated on the same public flag as the CTAs: advertising the studio while it is
+  // disabled would put a 404 in the sitemap.
+  const studioEntry: MetadataRoute.Sitemap =
+    process.env.NEXT_PUBLIC_VIBE_ENABLED === '1'
+      ? [
+          {
+            url: `${siteUrl}/startup/studio`,
+            lastModified,
+            changeFrequency: 'monthly' as const,
+            priority: 0.8,
+          },
+        ]
+      : []
+
   return [
+    ...studioEntry,
     {
       url: `${siteUrl}/`,
       lastModified,

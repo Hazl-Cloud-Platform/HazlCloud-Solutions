@@ -3,6 +3,9 @@
 
 export const CTA_URL = 'https://calendly.com/anthony-tam-hazl/30min'
 
+/** The free UI-mockup studio. Internal, so plain next/link navigation. */
+export const STUDIO_URL = '/startup/studio'
+
 export type Partner = { name: string; src: string }
 
 // Logos live in /public/brand/partners/. Tiles whose image is missing are

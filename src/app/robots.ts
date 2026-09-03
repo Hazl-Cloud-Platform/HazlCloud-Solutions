@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/studio', '/api/'],
+        disallow: ['/studio', '/vibe', '/api/'],
       },
       {
         // Explicitly welcome AI search / answer engines so HAZL can be cited.
@@ -27,7 +27,7 @@ export default function robots(): MetadataRoute.Robots {
           'Amazonbot',
         ],
         allow: '/',
-        disallow: ['/studio', '/api/'],
+        disallow: ['/studio', '/vibe', '/api/'],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

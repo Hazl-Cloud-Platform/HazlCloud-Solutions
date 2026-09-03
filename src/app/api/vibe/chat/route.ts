@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers'
 import { checkBudget, limitMessage } from '@/lib/vibe/budget'
 import { runTurn } from '@/lib/vibe/generate'
 import { assertSameOrigin, badRequest, fail, forbidden, ok, vibeEnabled } from '@/lib/vibe/http'
@@ -16,7 +15,7 @@ import {
   releaseTurn,
 } from '@/lib/vibe/limits'
 import { tryWithLock, withGlobalSlot } from '@/lib/vibe/mutex'
-import { markTurnstileVerified, mintSessionCookie, requireSession } from '@/lib/vibe/session'
+import { getSession, markTurnstileVerified, mintSessionCookie, requireSession } from '@/lib/vibe/session'
 import { verifyTurnstile } from '@/lib/vibe/turnstile'
 import type { VibeEvent } from '@/types/vibe'
 
@@ -79,7 +78,9 @@ export async function POST(req: Request) {
     })
     if (!created.ok) return fail(429, LIMIT_MESSAGES[created.kind], { code: 'ip_cap' })
     setCookie = mintSessionCookie(created.sessionId)
-    session = await requireSession(ipHash)
+    // Load it by id, not via requireSession(): that reads the request's cookie,
+    // and the cookie we just minted only reaches the browser with THIS response.
+    session = await getSession(created.sessionId)
     if (!session) return fail(500, 'Could not start a session.')
     await markTurnstileVerified(session.id)
   } else if (needsTurnstile) {
@@ -99,10 +100,6 @@ export async function POST(req: Request) {
   // costs the visitor one of their five.
   const { block } = await checkBudget(sessionId)
   if (block) return fail(429, limitMessage(block), { code: block })
-
-  if (setCookie) {
-    cookies().set(setCookie.name, setCookie.value, setCookie.options)
-  }
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
@@ -191,14 +188,28 @@ export async function POST(req: Request) {
     },
   })
 
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      // nginx buffers proxied responses by default, which would hold the whole
-      // stream until the end and make every turn look frozen.
-      'X-Accel-Buffering': 'no',
-    },
+  const headers = new Headers({
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    // nginx buffers proxied responses by default, which would hold the whole
+    // stream until the end and make every turn look frozen.
+    'X-Accel-Buffering': 'no',
   })
+  if (setCookie) headers.append('Set-Cookie', serializeCookie(setCookie))
+
+  return new Response(stream, { headers })
+}
+
+/** Builds a Set-Cookie header. Written by hand rather than via cookies().set()
+ *  because this response is a hand-constructed streaming Response. */
+function serializeCookie(c: ReturnType<typeof mintSessionCookie>): string {
+  const o = c.options as { httpOnly?: boolean; secure?: boolean; sameSite?: string; path?: string; maxAge?: number }
+  const parts = [`${c.name}=${c.value}`]
+  if (o.path) parts.push(`Path=${o.path}`)
+  if (typeof o.maxAge === 'number') parts.push(`Max-Age=${o.maxAge}`)
+  if (o.sameSite) parts.push(`SameSite=${o.sameSite.charAt(0).toUpperCase()}${o.sameSite.slice(1)}`)
+  if (o.httpOnly) parts.push('HttpOnly')
+  if (o.secure) parts.push('Secure')
+  return parts.join('; ')
 }

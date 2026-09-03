@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Sparkles,
   Leaf,
   Check,
   Lightbulb,
@@ -19,7 +20,9 @@ import { SwitchAudienceBar } from '@/components/SwitchAudienceBar'
 import { StartupNav } from './StartupNav'
 import { PartnerMarquee } from './PartnerMarquee'
 import { FaqSection } from './FaqSection'
-import { CTA_URL, HANDLES, TIMELINE, INCLUDED } from './data'
+import { CTA_URL, STUDIO_URL, HANDLES, TIMELINE, INCLUDED } from './data'
+
+const STUDIO_LIVE = process.env.NEXT_PUBLIC_VIBE_ENABLED === '1'
 
 const EYEBROW: React.CSSProperties = {
   fontSize: 12,
@@ -191,6 +194,24 @@ export function StartupLanding() {
                   Book a free build call
                   <ArrowRight size={18} strokeWidth={2.4} />
                 </a>
+                {STUDIO_LIVE && (
+                  <a
+                    href={STUDIO_URL}
+                    className="btn-outline"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      borderRadius: 10,
+                      padding: '15px 24px',
+                      fontSize: 15,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Sparkles size={17} strokeWidth={2.1} style={{ color: 'var(--accent)' }} />
+                    Try it now — free
+                  </a>
+                )}
                 <a
                   href="#how"
                   className="btn-outline"
