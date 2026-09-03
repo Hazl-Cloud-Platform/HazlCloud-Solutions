@@ -68,3 +68,4 @@ ds-bundle/
 /Logos/
 /.vibe-storage/
 /.vibe-admin-password.txt
+.dns-backup/
