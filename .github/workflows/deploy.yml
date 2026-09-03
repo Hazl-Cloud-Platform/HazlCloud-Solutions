@@ -3,10 +3,11 @@
 # NEIGHBOUR_URLS below. Verified on the host: 912 MB RAM, port 3002 free, and
 # this app measures ~135 MB resident, so it fits with roughly 350 MB to spare.
 #
-# NOTE ON DNS: www.hazlsolutions.com still resolves to Vercel. This workflow
-# ships the release to the VM and verifies it there; it does NOT make the public
-# site come from the VM. Flip DNS only after a release has proven healthy here,
-# and keep Vercel as the one-record rollback (bootstrap-vm.sh, step 5).
+# NOTE ON DNS: www.hazlsolutions.com does not point at this VM yet. This
+# workflow ships the release and verifies it ON THE BOX; it does not by itself
+# make the public site come from here. Flip DNS only once a release has proven
+# healthy, and keep the previous target as a one-record rollback until the VM
+# has served real traffic for a day (bootstrap-vm.sh, step 5).
 #
 # NO APPLICATION SECRETS LIVE IN GITHUB. The repository holds only what is needed
 # to reach the box (an SSH key and the host's public key); the VM itself holds two
@@ -211,11 +212,12 @@ jobs:
 
       # Tests the app we just deployed, on the box we just deployed to.
       #
-      # This used to curl https://www.hazlsolutions.com/startup. That name
-      # resolves to Vercel, so it returned 200 no matter what happened here --
-      # a dead release, a service that never started, even an empty release
-      # directory would all have been reported as a successful deploy. Point it
-      # back at the public URL once DNS actually resolves to this host.
+      # This used to curl the public URL, which does not resolve to this host,
+      # so it returned 200 no matter what happened here -- a dead release, a
+      # service that never started, even an empty release directory would all
+      # have been reported as a successful deploy. The app's own port on the
+      # target box is the only check that can actually fail. Point it back at
+      # the public URL once DNS resolves here.
       - name: Smoke test the release on the box
         env:
           HOST: ${{ secrets.EC2_HOST }}
@@ -293,8 +295,8 @@ jobs:
           code=$(ssh "$USER@$HOST" "curl -sS -o /dev/null -w '%{http_code}' --max-time 15 'http://127.0.0.1:$APP_PORT/startup/studio'" || echo 000)
           echo "studio on the box: $code (404 is expected while VIBE_ENABLED is unset)"
 
-      # Informational only. Until DNS is flipped this reports on Vercel, not on
-      # the box, so it must never fail the run.
+      # Informational only. Until DNS points here this reports on whatever else
+      # serves the domain, not on this box, so it must never fail the run.
       - name: Report what the public URL is actually serving
         continue-on-error: true
         run: |
