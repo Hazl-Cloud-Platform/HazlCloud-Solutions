@@ -19,13 +19,23 @@ WorkingDirectory=/srv/hazl-solutions/current
 # Two nested doppler run invocations, matching scripts/run-with-doppler.sh.
 # The INNER config wins on a key collision, which is why `npm run vibe:check`
 # asserts the resolved DATABASE_URL host.
+#
+# -p/-c ARE REQUIRED on both, even though each token is already scoped to one
+# project. `doppler run` injects DOPPLER_PROJECT/DOPPLER_CONFIG/DOPPLER_ENVIRONMENT
+# into the environment it hands to the child, so the inner invocation inherits
+# DOPPLER_PROJECT=hazl-general and tries to fetch that project with the dr-keys
+# token:
+#     Doppler Error: This token does not have access to requested project 'hazl-general'
+# and, with Restart=always, the unit crash-loops. Explicit flags override the
+# inherited variables. run-with-doppler.sh already passes -p/-c, which is why the
+# local path always worked while this one could never have.
 EnvironmentFile=/etc/hazl/doppler.env
 # PORT comes from /etc/hazl/doppler.env. The host already runs other Next apps
 # on 3000 and 3001 (fruttagala, smswebpages), so this MUST NOT default to 3000 --
 # a collision would fail to bind and, worse, could be mistaken for the wrong app
 # responding. Verify with `ss -tln` before changing it.
-ExecStart=/usr/bin/doppler run --token "${DOPPLER_TOKEN_GENERAL}" -- \
-          /usr/bin/doppler run --token "${DOPPLER_TOKEN_LLM}" -- \
+ExecStart=/usr/bin/doppler run --token "${DOPPLER_TOKEN_GENERAL}" -p hazl-general -c prd -- \
+          /usr/bin/doppler run --token "${DOPPLER_TOKEN_LLM}" -p dr-keys -c prd_llm_opus4-8 -- \
           /usr/bin/node node_modules/.bin/next start --port ${PORT}
 
 Restart=always
