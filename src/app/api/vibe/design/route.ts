@@ -1,9 +1,9 @@
 import { discardSessionDesigns } from '@/lib/vibe/designs'
 import { assertSameOrigin, badRequest, fail, forbidden, ok, serverError, vibeEnabled } from '@/lib/vibe/http'
 import { requestIpHash } from '@/lib/vibe/ip'
-import { MAX_TURNS_PER_SESSION } from '@/lib/vibe/limits'
 import { tryWithLock } from '@/lib/vibe/mutex'
 import { requireSession, resetTurnHistory } from '@/lib/vibe/session'
+import { getMaxTurnsPerSession } from '@/lib/vibe/settings'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -43,13 +43,14 @@ export async function DELETE(req: Request) {
       })
     }
 
-    // turn_count is deliberately NOT reset: it is the only thing enforcing
-    // MAX_TURNS_PER_SESSION, and zeroing it here would make the cap bypassable by
-    // discarding on a loop. The confirmation dialog says so before the visitor commits.
+    // turn_count is deliberately NOT reset: it is the only thing enforcing the
+    // per-session change allowance, and zeroing it here would make the cap
+    // bypassable by discarding on a loop. The confirmation dialog says so before
+    // the visitor commits.
     return ok({
       removed: outcome.removed,
       archived: outcome.archived,
-      turnsLeft: Math.max(0, MAX_TURNS_PER_SESSION - session.turn_count),
+      turnsLeft: Math.max(0, (await getMaxTurnsPerSession()) - session.turn_count),
     })
   } catch (err) {
     console.error('[vibe] design delete:', err)

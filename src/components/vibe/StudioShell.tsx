@@ -229,21 +229,26 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 px-5 py-3">
-        <div className="flex items-center gap-3">
-          <Link href="/startup" className="flex items-center gap-2 no-underline">
+        <div className="flex shrink-0 items-center gap-3">
+          {/* shrink-0 + nowrap on the wordmark: "SOLUTIONS STUDIO" is long enough
+              that a shrinking flex child breaks it across two lines and grows the
+              whole header by a row. It gets its space first; the count on the
+              right is what gives way. */}
+          <Link href="/startup" className="flex items-center gap-2 whitespace-nowrap no-underline">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/hazlCloud-logo-bw2.png" alt="" width={26} height={26} className="h-[26px] w-[26px]" />
             <span className="text-[15px] font-bold tracking-[-.03em] text-white">HAZL</span>
-            <span className="hidden text-[15px] font-semibold tracking-[-.03em] text-white/45 sm:inline">STUDIO</span>
+            <span className="hidden text-[15px] font-semibold tracking-[-.03em] text-white/45 sm:inline">
+              SOLUTIONS STUDIO
+            </span>
           </Link>
-          <span className="hidden rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[.12em] text-white/45 md:inline">
-            Preview only
-          </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* md, not sm: between 640 and 767px the wordmark, this count and both
+              buttons do not fit on one line together. */}
           {turnsLeft !== null && (
-            <span className="hidden text-[13px] text-white/45 sm:inline">
+            <span className="hidden whitespace-nowrap text-[13px] text-white/45 md:inline">
               {turnsLeft} {turnsLeft === 1 ? 'change' : 'changes'} left
             </span>
           )}

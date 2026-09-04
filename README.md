@@ -244,13 +244,19 @@ links. A real five-turn session lands around **$0.55–0.80**.
 
 Spending is capped three ways, all re-checked before *every* model call: monthly (default $100),
 daily (default $12, so one viral day cannot black out the rest of the month), and per session
-($1.75). All three are editable at `/vibe/admin`. At the current $100 monthly the ceiling is
+($1.75) — all in **USD**, which is what the rate card and every stored `cost_usd` are quoted in.
+The first two are editable at `/vibe/admin`. At the current $100 monthly the ceiling is
 roughly **130 sessions/month**; monthly is now the binding governor, so watch it before loosening
 anything else.
 
+Changes per session (default 5: one generation plus four refinements) is editable there too, and
+applies to sessions already in flight. It is the one lever that multiplies spend directly, so the
+form caps it at 20. Raising it above the per-IP daily turn cap (12) also raises that cap to match —
+otherwise the studio would refuse changes it had just been told to hand out.
+
 `LLM_MAX_TOKENS` defaults to 18,000 and must stay well above a full document. Below ~12,000 the
 multi-page shape is cut off mid-build, and a truncated *first* generation is the worst failure the
-studio has: billed in full, one of five turns consumed, nothing rendered. There is one automatic
+studio has: billed in full, one of the session's changes consumed, nothing rendered. There is one automatic
 retry at a reduced page count, sharing the session's single fallback rescue — those appear in the
 ledger as `generate_retry`.
 
@@ -258,8 +264,8 @@ ledger as `generate_retry`.
 
 `/vibe/admin`, reached by clicking the small dot in the studio's status bar seven times, or with
 `Ctrl+Shift+Alt+H`. The URL works directly — the hidden trigger is discovery, not security. It
-shows spend against both budgets, leads, stored designs, per-day usage, and the SEARCH/REPLACE
-fallback rate.
+shows spend against both budgets (USD), leads, stored designs, per-day usage, and the
+SEARCH/REPLACE fallback rate, and sets the budgets and the per-session change allowance.
 
 Access is one shared password across `VIBE_ADMIN_EMAILS`, so the signed-in name is
 self-asserted rather than proven; the console says so instead of implying an audit trail that
@@ -271,14 +277,19 @@ does not exist.
   would cancel the sandbox — `srcDoc` inherits the embedder's origin, so model-written code
   driven by a stranger's prompt could read cookies, call the admin API with an admin's session,
   or rewrite the parent page under our own certificate.
+- **The admin preview uses those same flags.** It used to run fully inert, but a mockup's styling
+  *is* the Tailwind CDN script, so an inert frame showed unstyled markup rather than the design.
+  The opaque origin is what keeps an admin's session out of reach; the console has a `Scripts off`
+  toggle for anyone who would rather see nothing execute at all.
 - Generated HTML is **reconstructed** with `parse5`, not scrubbed with regexes: we own `<head>`,
   so the injected CSP is provably first and `<base>` / `<meta refresh>` cannot survive.
 - **The HTML is not secret.** There is no download button, but anyone who opens DevTools can read
   the document. What the absence of a download buys is friction and framing, not protection.
 - **A mockup can navigate its own frame.** Inline script is allowed so mockups can switch tabs and
   open modals, and no CSP directive governs `location.assign` — so a visitor can ask the model for
-  a page that redirects itself. This is accepted because a frame is only ever shown to the person
-  who prompted it (the session cookie is signed and IP-bound, and there is no share link). **If
+  a page that redirects itself. For a visitor this is self-inflicted: a frame is only ever shown to
+  the person who prompted it (the session cookie is signed and IP-bound, and there is no share
+  link). The one other viewer is an admin opening the preview, who can turn scripts off. **If
   sharing is ever added, this must be revisited** — either drop `'unsafe-inline'` from `script-src`
   or serve mockups from a separate origin.
 - Visitor IPs are never stored — only an HMAC of the /32 (IPv4) or /64 (IPv6) block.
