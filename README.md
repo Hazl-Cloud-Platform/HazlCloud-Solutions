@@ -179,17 +179,39 @@ deployment is live. See `scripts/deploy/bootstrap-vm.sh` and `.github/workflows/
 ### Running it locally
 
 ```bash
-npm run dev:vibe     # layers both Doppler configs, then next dev
+npm run dev:vibe     # layers both Doppler configs, then next dev on :3000
 ```
+
+The two dev servers have **pinned, non-overlapping ports**, because they are not
+interchangeable and Next silently hops to the next free port when they collide:
+
+| Command | Port | Studio |
+|---|---|---|
+| `npm run dev:vibe` | **3000** | works |
+| `npm run dev` | **3100** | absent — the CTA is hidden and `/startup/studio` 404s |
+
+If the studio is missing from `/startup`, check the port before anything else.
 
 which is:
 
 ```bash
 doppler run -p hazl-general -c prd -- \
-  doppler run -p dr-keys -c prd_llm_opus4-8 -- next dev
+  doppler run -p dr-keys -c prd_llm_opus4-8 -- \
+  env VIBE_STORAGE_DIR=.vibe-storage next dev
 ```
 
-You also need `VIBE_ENABLED=1`, `NEXT_PUBLIC_VIBE_ENABLED=1` and a writable `VIBE_STORAGE_DIR`.
+Doppler supplies `VIBE_ENABLED`, `NEXT_PUBLIC_VIBE_ENABLED` and the rest, so plain `npm run dev`
+cannot run the studio — it has no `VIBE_IP_SALT` and every route 503s. Two overrides make the
+production config usable on a laptop, and both are dev-only:
+
+- **Storage.** Doppler's `VIBE_STORAGE_DIR` is the VM path `/var/lib/hazl-vibe`, which no laptop
+  can write, so `dev:vibe` redirects it to a gitignored `.vibe-storage/` in the repo. Export your
+  own `VIBE_STORAGE_DIR` to override. Without this a turn runs the LLM in full, then dies with
+  `EACCES: mkdir` when it tries to persist — you pay for the generation and get nothing.
+- **Origin.** Doppler also injects the production `NEXT_PUBLIC_SITE_URL`, and it wins over
+  `.env.local`, so `assertSameOrigin` would reject every request from `localhost`. It accepts
+  localhost hostnames when `NODE_ENV !== 'production'`; see `src/lib/vibe/http.ts`.
+
 Turnstile verification is skipped outside production, so no Cloudflare account is needed to
 develop. Every variable is documented in `.env.example`.
 
@@ -209,15 +231,28 @@ Measured against the live gateway, not estimated:
 
 | | Output tokens | Cost |
 |---|---|---|
-| First generation | 5.2k–6.2k | **$0.15–0.17** |
-| Surgical edit | ~170 | **$0.04** |
-| Broad restyle (rewrites) | ~6.3k | **$0.19** |
-| Failed edit + fallback | two calls | **$0.43** |
+| First generation (landing screen + 3–5 pages) | ~8.9k | **$0.25** |
+| Surgical edit | ~220 | **$0.06** |
+| Edit that touches every row of a table | ~3.4k | **$0.13** |
+| Broad restyle (rewrites) | ~9k | **$0.38** |
+| Failed edit + fallback | two calls | **$0.44** |
+| Truncated generation + retry | two calls | **$0.74** |
 
-A real five-turn session lands around **$0.45–0.70**. Spending is capped three ways, all
-re-checked before *every* model call: monthly (default $100), daily (default $8, so one viral
-day cannot black out the rest of the month), and per session ($1.00). Both budgets are editable
-at `/vibe/admin`.
+Multi-page mockups roughly doubled the first generation — a document is now ~20–28KB rather than
+~14KB, and the visitor gets every nav item as a real page instead of one screen and four dead
+links. A real five-turn session lands around **$0.55–0.80**.
+
+Spending is capped three ways, all re-checked before *every* model call: monthly (default $100),
+daily (default $12, so one viral day cannot black out the rest of the month), and per session
+($1.75). All three are editable at `/vibe/admin`. At the current $100 monthly the ceiling is
+roughly **130 sessions/month**; monthly is now the binding governor, so watch it before loosening
+anything else.
+
+`LLM_MAX_TOKENS` defaults to 18,000 and must stay well above a full document. Below ~12,000 the
+multi-page shape is cut off mid-build, and a truncated *first* generation is the worst failure the
+studio has: billed in full, one of five turns consumed, nothing rendered. There is one automatic
+retry at a reduced page count, sharing the session's single fallback rescue — those appear in the
+ledger as `generate_retry`.
 
 ### Admin
 

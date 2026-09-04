@@ -44,9 +44,10 @@ export function MockupFrame({ html, busy, progress }: { html: string | null; bus
           {busy ? (
             <>
               <Loader2 size={28} strokeWidth={1.6} className="animate-spin text-[var(--accent)]" />
-              <p className="text-[14px] text-white/55">Designing your screen…</p>
+              <p className="text-[14px] text-white/55">Designing your screens…</p>
               <p className="max-w-xs text-[12.5px] leading-relaxed text-white/30">
-                This takes about a minute. We only build the interface — the data is made up.
+                This takes a minute or two. We build the main screen and the pages behind it — the data is made
+                up.
               </p>
             </>
           ) : (

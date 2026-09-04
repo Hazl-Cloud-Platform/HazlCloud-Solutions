@@ -16,8 +16,11 @@ export const DEFAULT_MONTHLY_BUDGET_USD = 100
  * primary conversion page showing "at capacity" for the other 29. This allows a
  * genuine burst (roughly 15-25 sessions) while the monthly ceiling still governs
  * the total. Adjustable from the admin page.
+ *
+ * Raised from $8 with multi-page mockups: at ~$0.76 a session, $8 bought 10 and
+ * broke the promise in the line above. $12 restores ~16.
  */
-export const DEFAULT_DAILY_BUDGET_USD = 8
+export const DEFAULT_DAILY_BUDGET_USD = 12
 
 export async function getSetting(key: string): Promise<string | null> {
   const row = await queryOne<{ value: string }>(`SELECT "value" FROM ${T.settings} WHERE "key" = $1`, [key])

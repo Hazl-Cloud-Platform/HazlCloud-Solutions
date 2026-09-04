@@ -27,12 +27,18 @@ CREATE TABLE IF NOT EXISTS "Sol-Vibe-Code_sessions" (
   "last_turn_at"          timestamptz NULL,
   -- One full-rewrite rescue per session. Kept here rather than in process memory
   -- so it survives a restart and cannot grow without bound.
-  "fallback_used"         boolean     NOT NULL DEFAULT false
+  "fallback_used"         boolean     NOT NULL DEFAULT false,
+  -- "Start a new design" watermark: loadTurns() replays only turns ABOVE this id,
+  -- so a discarded conversation stops leaking into the next design. The turn rows
+  -- themselves are kept -- ipTurnsToday() counts them for the per-IP daily cap.
+  "history_from_turn_id"  bigint      NOT NULL DEFAULT 0
 );
 
 -- Added after the initial release; harmless to re-run.
 ALTER TABLE "Sol-Vibe-Code_sessions"
   ADD COLUMN IF NOT EXISTS "fallback_used" boolean NOT NULL DEFAULT false;
+ALTER TABLE "Sol-Vibe-Code_sessions"
+  ADD COLUMN IF NOT EXISTS "history_from_turn_id" bigint NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS "Sol-Vibe-Code_sessions_ip_created_idx"
   ON "Sol-Vibe-Code_sessions" ("ip_hash", "created_at" DESC);
 CREATE INDEX IF NOT EXISTS "Sol-Vibe-Code_sessions_created_idx"
@@ -67,8 +73,14 @@ CREATE TABLE IF NOT EXISTS "Sol-Vibe-Code_designs" (
   "bytes"      integer     NOT NULL,
   "sha256"     char(64)    NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
+  -- Set when the visitor discards a design that a lead already points at. The row
+  -- and its file survive so the sales snapshot does, but latestDesign() ignores it
+  -- so the visitor can never see or edit it again.
+  "archived_at" timestamptz NULL,
   CONSTRAINT "Sol-Vibe-Code_designs_turn_uq" UNIQUE ("session_id", "turn_index")
 );
+ALTER TABLE "Sol-Vibe-Code_designs"
+  ADD COLUMN IF NOT EXISTS "archived_at" timestamptz NULL;
 CREATE INDEX IF NOT EXISTS "Sol-Vibe-Code_designs_session_idx"
   ON "Sol-Vibe-Code_designs" ("session_id", "turn_index" DESC);
 CREATE INDEX IF NOT EXISTS "Sol-Vibe-Code_designs_created_idx"

@@ -90,6 +90,34 @@ export function buildCsp(allowImageCdn: boolean): string {
   ].join('; ')
 }
 
+/**
+ * Stops a click on a link from navigating the preview away from the mockup.
+ *
+ * The frame is a srcdoc document, whose URL is `about:srcdoc` but whose BASE URL is
+ * inherited from the embedder. So `href="#"` -- which every generated mockup is
+ * full of, because the anchor rewrite above produces it -- does not resolve to the
+ * current document at all. It resolves to the studio's own URL, and clicking one
+ * loads the entire studio inside its own preview pane. `<base>` cannot fix it:
+ * base-uri is 'none', deliberately.
+ *
+ * Capture phase with preventDefault but NOT stopPropagation, so a mockup's own
+ * click handlers -- tab switching and modals, which inline script exists to
+ * support -- still run. They just cannot navigate. Fragment links keep working by
+ * scrolling within the frame, which is what they were meant to do.
+ */
+const LINK_INTERCEPTOR = `<script>
+document.addEventListener('click', function (e) {
+  var a = e.target && e.target.closest ? e.target.closest('a[href]') : null
+  if (!a) return
+  e.preventDefault()
+  var h = a.getAttribute('href') || ''
+  if (h.length > 1 && h.charAt(0) === '#') {
+    var t = document.getElementById(h.slice(1))
+    if (t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}, true)
+</script>`
+
 function isElement(node: Node): node is Element {
   return 'tagName' in node
 }
@@ -337,6 +365,7 @@ ${headStyles.join('\n')}
 </head>
 <body>
 ${bodyHtml}
+${LINK_INTERCEPTOR}
 </body>
 </html>`
 

@@ -9,16 +9,20 @@ import { getDailyBudgetUsd, getMonthlyBudgetUsd } from './settings'
 /**
  * Hard ceiling on one visitor's whole session, independent of the turn cap.
  *
- * Sized from MEASURED costs against the live gateway, not an estimate:
- *   first generation      ~$0.15-0.17  (5.2k-6.2k output tokens)
- *   surgical edit          ~$0.04      (169 output tokens)
- *   broad restyle          ~$0.19      (the model rewrites, correctly)
- *   failed edit + fallback ~$0.43      (two calls; the case worth avoiding)
+ * Sized from MEASURED costs against the live gateway, not an estimate. Multi-page
+ * mockups roughly doubled the first generation, so these are the current numbers:
+ *   first generation      ~$0.29       (~11k output tokens, 1 screen + 3-5 pages)
+ *   surgical edit          ~$0.06      (the document snapshot is ~28KB now)
+ *   broad restyle          ~$0.38      (the model rewrites, correctly)
+ *   failed edit + fallback ~$0.44      (two calls; the case worth avoiding)
  *
- * A legitimate five-turn session therefore lands around $0.45-0.70, so this is a
- * ceiling on abuse rather than a limit a real visitor should ever meet.
+ * A legitimate five-turn session therefore lands around $0.76, and the worst
+ * legitimate one -- create, a failed edit with its fallback, a restyle, two edits
+ * -- reaches ~$1.18. At the old $1.00 this fired during ordinary use, on the page
+ * whose entire job is conversion. This is a ceiling on abuse, not a limit a real
+ * visitor should ever meet.
  */
-export const MAX_SESSION_COST_USD = 1.0
+export const MAX_SESSION_COST_USD = 1.75
 
 /**
  * Start of the current calendar month, in UTC.

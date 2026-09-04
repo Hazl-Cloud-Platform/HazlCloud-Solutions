@@ -62,9 +62,19 @@ if [ "$code" != "200" ]; then
 fi
 
 say "neighbour health BEFORE"
+BEFORE=()
 for u in "${NEIGHBOURS[@]}"; do
-  printf '    %-42s %s\n' "$u" "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)"
+  c="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)"
+  BEFORE+=("$c")
+  printf '    %-42s %s\n' "$u" "$c"
 done
+
+if [ "${SKIP_DNS:-0}" = 1 ] || [ "${STOP_AFTER_NGINX:-0}" = 1 ]; then
+  MANUAL_DNS=1
+  CF_TOKEN=""
+  CF_API=https://api.cloudflare.com/client/v4
+  cf() { :; }
+else
 
 say "Cloudflare credentials (never echoed, never stored)"
 echo "    The zone lives in a Cloudflare account that Anthony.tam@hazl.ca cannot"
@@ -88,6 +98,7 @@ else
     exit 1
   fi
   echo "    zone id: ${ZONE_ID:0:8}..."
+fi
 fi
 
 say "step 1/5: rate-limit zone (vhost depends on it; must exist before nginx -t)"
@@ -120,9 +131,19 @@ echo "    reloaded. verifying over HTTP without touching DNS:"
 printf '    www via --resolve -> %s\n' \
   "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 --resolve "www.$ZONE_NAME:80:$HOST" "http://www.$ZONE_NAME/startup" || echo 000)"
 
+if [ "${STOP_AFTER_NGINX:-0}" = 1 ]; then
+  say "STOP_AFTER_NGINX=1 -- nginx is prepared, stopping before the DNS change"
+  echo "    The box now answers for www.$ZONE_NAME over HTTP. Change DNS, then"
+  echo "    re-run with SKIP_DNS=1 to issue the certificate and install the"
+  echo "    full vhost."
+  exit 0
+fi
+
 say "step 3/5: pointing DNS at $HOST (grey cloud / DNS-only)"
 
-if [ "$MANUAL_DNS" = 1 ]; then
+if [ "${SKIP_DNS:-0}" = 1 ]; then
+  echo "    SKIP_DNS=1 -- DNS was changed out of band; only verifying convergence"
+elif [ "$MANUAL_DNS" = 1 ]; then
   cat <<MANUAL
     Make these two changes in the Cloudflare account that owns $ZONE_NAME:
 
@@ -202,11 +223,17 @@ printf '    apex redirect -> %s\n' \
   "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://$ZONE_NAME/" || echo 000)"
 
 say "neighbour health AFTER"
+# Compare against what each site returned BEFORE, not against 200. Several of
+# these legitimately answer 3xx (smswebpages redirects to /login), so a bare
+# "= 200" test reports a healthy neighbour as broken.
 broke=""
+i=0
 for u in "${NEIGHBOURS[@]}"; do
   now="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)"
-  printf '    %-42s %s\n' "$u" "$now"
-  [ "$now" = "200" ] || broke="$broke $u"
+  was="${BEFORE[$i]:-?}"
+  printf '    %-42s %s (before: %s)\n' "$u" "$now" "$was"
+  [ "$now" = "$was" ] || broke="$broke $u($was->$now)"
+  i=$((i+1))
 done
 [ -n "$broke" ] && echo "    WARNING: check these:$broke" >&2
 

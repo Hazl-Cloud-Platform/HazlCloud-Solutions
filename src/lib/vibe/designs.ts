@@ -53,9 +53,20 @@ export async function saveDesign(args: {
   return row
 }
 
+/**
+ * The session's current document.
+ *
+ * `ORDER BY "turn_index" DESC` is why discardSessionDesigns() has to remove EVERY
+ * design rather than just the newest: deleting only the latest promotes the
+ * previous turn's page here, so "start a new design" would silently behave as an
+ * undo. Archived designs are excluded so a discarded-but-lead-attached design can
+ * never rehydrate the studio or become the base for an edit.
+ */
 export async function latestDesign(sessionId: string): Promise<DesignRow | null> {
   return queryOne<DesignRow>(
-    `SELECT * FROM ${T.designs} WHERE "session_id" = $1 ORDER BY "turn_index" DESC LIMIT 1`,
+    `SELECT * FROM ${T.designs}
+      WHERE "session_id" = $1 AND "archived_at" IS NULL
+      ORDER BY "turn_index" DESC LIMIT 1`,
     [sessionId],
   )
 }
@@ -89,6 +100,60 @@ export async function removeDesign(designId: string): Promise<boolean> {
   })
   await query(`DELETE FROM ${T.designs} WHERE "id" = $1`, [designId])
   return true
+}
+
+/**
+ * Splits a session's designs into the ones to destroy and the ones to keep.
+ *
+ * A design a visitor already asked us to contact them about is a sales record:
+ * ContactModal tells them "we've saved your design", and staleDesignIds() already
+ * exempts lead-attached designs from the retention purge. Destroying it on a later
+ * click would break both. Archiving hides it from the visitor just as completely --
+ * latestDesign() skips archived rows -- while keeping the snapshot.
+ *
+ * Pure, and separate from the query, so the decision is testable without a database.
+ */
+export function partitionForDiscard(
+  rows: { id: string; has_lead: boolean }[],
+): { remove: string[]; archive: string[] } {
+  const remove: string[] = []
+  const archive: string[] = []
+  for (const row of rows) (row.has_lead ? archive : remove).push(row.id)
+  return { remove, archive }
+}
+
+/**
+ * Discards a session's entire design lineage, so the next turn starts from
+ * scratch instead of editing what the visitor just threw away.
+ *
+ * Not `deleteSessionDir()`: that removes the whole directory, which would take the
+ * archived lead-attached files with it.
+ */
+export async function discardSessionDesigns(sessionId: string): Promise<{ removed: number; archived: number }> {
+  const rows = await query<{ id: string; has_lead: boolean }>(
+    `SELECT d."id", EXISTS (SELECT 1 FROM ${T.leads} l WHERE l."design_id" = d."id") AS has_lead
+       FROM ${T.designs} d
+      WHERE d."session_id" = $1 AND d."archived_at" IS NULL
+      ORDER BY d."turn_index" ASC`,
+    [sessionId],
+  )
+
+  const { remove, archive } = partitionForDiscard(rows)
+
+  if (archive.length) {
+    await query(`UPDATE ${T.designs} SET "archived_at" = now() WHERE "id" = ANY($1)`, [archive])
+  }
+
+  // Oldest first. If this throws partway the NEWEST design still exists, so
+  // latestDesign() keeps returning the page the visitor is looking at and the UI
+  // stays truthful. Newest-first would leave an older design promoted to current,
+  // which is the silent-undo failure reached by an error path instead of by design.
+  let removed = 0
+  for (const id of remove) {
+    if (await removeDesign(id)) removed += 1
+  }
+
+  return { removed, archived: archive.length }
 }
 
 export async function allDesignPaths(): Promise<Set<string>> {

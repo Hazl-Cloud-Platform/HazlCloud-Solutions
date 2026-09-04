@@ -1,5 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { blockingLimit, dayStartUtc, limitMessage, monthStartUtc, type BudgetState } from '../budget'
+import { MAX_SESSION_COST_USD, blockingLimit, dayStartUtc, limitMessage, monthStartUtc, type BudgetState } from '../budget'
+import { shouldRetryTruncated } from '../generate'
+
+describe('session ceiling vs measured costs', () => {
+  it('clears the worst legitimate session', () => {
+    // Multi-page mockups roughly doubled a create ($0.16 -> $0.29). The worst
+    // session a real visitor can reach -- create, a failed edit with its fallback,
+    // a restyle, two edits -- is ~$1.18. At the old $1.00 this cap fired during
+    // ordinary use, on the page whose entire job is conversion.
+    expect(MAX_SESSION_COST_USD).toBeGreaterThan(1.2)
+  })
+})
+
+describe('shouldRetryTruncated', () => {
+  it('retries a cut-off document once', () => {
+    expect(shouldRetryTruncated({ truncated: true, fallbackUsed: false })).toBe(true)
+  })
+
+  it('does not retry once the session has spent its rescue', () => {
+    // One flag, so truncation and the edit fallback share a single budget and the
+    // retry cannot loop.
+    expect(shouldRetryTruncated({ truncated: true, fallbackUsed: true })).toBe(false)
+  })
+
+  it('does nothing when the document completed', () => {
+    expect(shouldRetryTruncated({ truncated: false, fallbackUsed: false })).toBe(false)
+  })
+})
 
 describe('UTC boundaries', () => {
   // The bug this guards against: deriving the boundary in SQL with

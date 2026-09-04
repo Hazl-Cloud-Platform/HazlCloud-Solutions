@@ -4,7 +4,13 @@ import { cacheEnabled, getAnthropic, getModel, isUnsupportedParamError, llmEffor
 import { checkBudget, limitMessage } from './budget'
 import { applyEdits, extractTitle, parseModelOutput } from './edits'
 import { latestDesignHtml, saveDesign } from './designs'
-import { currentDocumentBlock, fallbackInstruction, nonceInstruction, SYSTEM_PROMPT } from './prompt'
+import {
+  currentDocumentBlock,
+  fallbackInstruction,
+  nonceInstruction,
+  SYSTEM_PROMPT,
+  truncationInstruction,
+} from './prompt'
 import { sanitizeMockupHtml } from './sanitizeHtml'
 import { appendTurn, hasUsedFallback, loadTurns, markFallbackUsed, recordFirstPrompt } from './session'
 import { MAX_HTML_BYTES } from './storage'
@@ -25,9 +31,23 @@ const CHARS_PER_TOKEN = 4
 const BILLED_CHARS_PER_TOKEN = 4
 const USAGE_TICK_MS = 500
 
-/** Roughly 24k tokens of document. Beyond this an adversarial "make it much
- *  longer" sequence starts costing real money on input alone, every turn. */
-const MAX_SNAPSHOT_CHARS = 90_000
+/** Roughly 29k tokens of document. Beyond this an adversarial "make it much
+ *  longer" sequence starts costing real money on input alone, every turn. Raised
+ *  with multi-page mockups: a 28KB starting document left only 3.2x headroom at
+ *  90k, so ordinary growth would hit the cap. Stays under MAX_HTML_BYTES so the
+ *  writable-but-uneditable dead band stays narrow. */
+const MAX_SNAPSHOT_CHARS = 110_000
+
+/**
+ * Whether a cut-off document gets one more attempt.
+ *
+ * Reuses the session's single fallback rescue rather than adding a second budget:
+ * a session that spends it recovering from truncation correctly gets no edit
+ * fallback later, and one flag cannot be spent twice, so this cannot loop.
+ */
+export function shouldRetryTruncated(a: { truncated: boolean; fallbackUsed: boolean }): boolean {
+  return a.truncated && !a.fallbackUsed
+}
 
 export interface GenerateArgs {
   sessionId: string
@@ -112,6 +132,29 @@ export async function runTurn(args: GenerateArgs): Promise<GenerateResult> {
     const raw = await streamOnce({ client, model, messages, signal, emit, sessionId, turnIndex, kind, attempt })
     spentUsd += raw?.costUsd ?? 0
     if (raw === null) return { changed: false, designId: null, costUsd: spentUsd }
+
+    if (raw.truncated) {
+      // The worst outcome in the system: billed in full, one of five turns gone,
+      // nothing rendered. One retry at a smaller page count costs less than the
+      // dead turn it replaces, on the page whose whole job is conversion.
+      if (!shouldRetryTruncated({ truncated: true, fallbackUsed: await hasUsedFallback(sessionId) })) {
+        emit({
+          type: 'error',
+          code: 'max_tokens',
+          message: 'That design got too large to finish. Try asking for something a little simpler.',
+        })
+        return { changed: false, designId: null, costUsd: spentUsd }
+      }
+      await markFallbackUsed(sessionId)
+      // 500 chars, not the 4000 the edit fallback pushes: half a document is not
+      // useful context, and paying to send it back every time is pure waste. It
+      // exists only to keep the roles alternating.
+      messages.push({ role: 'assistant', content: raw.text.slice(0, 500) })
+      messages.push({ role: 'user', content: truncationInstruction(nonce) })
+      kind = 'generate_retry'
+      attempt = 2
+      continue
+    }
 
     const parsed = parseModelOutput(raw.text, nonce)
     if (parsed.note) emit({ type: 'note', delta: parsed.note })
@@ -204,7 +247,7 @@ interface StreamArgs {
 
 /** One API call, fully billed whether or not it completes. Returns null when the
  *  turn cannot continue (the caller has already been told why). */
-async function streamOnce(args: StreamArgs): Promise<{ text: string; costUsd: number } | null> {
+async function streamOnce(args: StreamArgs): Promise<{ text: string; costUsd: number; truncated: boolean } | null> {
   const { client, model, messages, signal, emit } = args
 
   const system: Anthropic.TextBlockParam[] = [
@@ -295,7 +338,12 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string; costUsd: nu
         emit({
           type: 'progress',
           bytes: text.length,
-          pct: Math.min(96, Math.round((text.length / 18_000) * 100)),
+          // A curve, not a ratio, because documents now range from ~9KB for one
+          // screen to ~40KB for eight pages and no single denominator is right
+          // for both: 18k pegged a multi-page build at 96% halfway through.
+          // 8KB->32%, 18KB->57%, 28KB->71%, 40KB->83%. Never reaches 96, so it
+          // is always still moving when the document finally lands.
+          pct: Math.round(96 * (1 - Math.exp(-text.length / 20_000))),
         })
       }
     }
@@ -362,14 +410,8 @@ async function streamOnce(args: StreamArgs): Promise<{ text: string; costUsd: nu
     throw err
   }
 
-  if (msg.stop_reason === 'max_tokens') {
-    emit({
-      type: 'error',
-      code: 'max_tokens',
-      message: 'That design got too large to finish. Try asking for something a little simpler.',
-    })
-    return null
-  }
-
-  return { text, costUsd }
+  // Reported, not handled here. Only runTurn knows whether a retry is still
+  // available, and a truncated document is recoverable -- so this must not be a
+  // `null`, which means "already explained to the visitor, stop".
+  return { text, costUsd, truncated: msg.stop_reason === 'max_tokens' }
 }

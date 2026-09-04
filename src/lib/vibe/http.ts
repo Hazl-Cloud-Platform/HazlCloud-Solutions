@@ -38,6 +38,24 @@ export function siteOrigin(): string | null {
 }
 
 /**
+ * Local dev runs under `npm run dev:vibe`, which layers the Doppler configs and
+ * so injects the PRODUCTION NEXT_PUBLIC_SITE_URL into the process. Doppler wins
+ * over .env.local, so without this every studio request from
+ * http://localhost:3000 fails the check below and the feature cannot be
+ * developed at all. Dead code in a production build: `next build` pins
+ * NODE_ENV=production, so this returns false before parsing anything.
+ */
+function isLocalDevOrigin(value: string): boolean {
+  if (process.env.NODE_ENV === 'production') return false
+  try {
+    const { hostname } = new URL(value)
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+  } catch {
+    return false
+  }
+}
+
+/**
  * Rejects cross-origin mutating requests.
  *
  * Compares parsed ORIGINS for exact equality rather than doing a prefix test --
@@ -58,6 +76,7 @@ export function assertSameOrigin(req: Request): boolean {
 
   const origin = req.headers.get('origin')
   if (origin) {
+    if (isLocalDevOrigin(origin)) return true
     try {
       return new URL(origin).origin === expected
     } catch {
@@ -69,6 +88,7 @@ export function assertSameOrigin(req: Request): boolean {
   // plain cross-site form post cannot slip through.
   const referer = req.headers.get('referer')
   if (referer) {
+    if (isLocalDevOrigin(referer)) return true
     try {
       return new URL(referer).origin === expected
     } catch {

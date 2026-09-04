@@ -15,8 +15,11 @@ export interface NormalizedUsage {
   cache_read_tokens: number
 }
 
-/** Why an API call happened. `attempt` separates the two calls of one failed edit turn. */
-export type UsageKind = 'generate' | 'edit' | 'edit_fallback'
+/** Why an API call happened. `attempt` separates the two calls of one failed edit
+ *  turn. `generate_retry` is a rebuild after the first attempt was cut off at the
+ *  output ceiling -- kept distinct from `edit_fallback` so the admin fallback-rate
+ *  metric stays clean and the truncation rate is separately visible. */
+export type UsageKind = 'generate' | 'edit' | 'edit_fallback' | 'generate_retry'
 
 export interface SessionRow {
   id: string
@@ -37,6 +40,8 @@ export interface DesignRow {
   bytes: number
   sha256: string
   created_at: Date
+  /** Non-null once the visitor discarded it but a lead still references it. */
+  archived_at: Date | null
 }
 
 export interface LeadRow {

@@ -46,9 +46,19 @@ export function llmEffort(): string | null {
   return v === '' ? null : v
 }
 
+/**
+ * Sized for a multi-page mockup, and it must stay that way.
+ *
+ * A landing screen plus four secondary pages is ~28KB of document, which bills
+ * ~11k output tokens (~315 per KB, plus 1.5-2.5k of adaptive thinking). At the
+ * old 12k ceiling that shape truncated more often than not, and a truncated
+ * CREATE is the worst failure in the system: billed in full, one of five turns
+ * gone, nothing rendered. 18k puts the target at 54-67% and survives an overrun.
+ * Verified accepted by the Foundry deployment.
+ */
 export function maxOutputTokens(): number {
   const n = Number(process.env.LLM_MAX_TOKENS)
-  return Number.isInteger(n) && n > 0 ? n : 12_000
+  return Number.isInteger(n) && n > 0 ? n : 18_000
 }
 
 /** True when an API error is the gateway rejecting a parameter it does not

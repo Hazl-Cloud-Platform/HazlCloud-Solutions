@@ -14,9 +14,18 @@
  * expensive full-rewrite fallback.
  */
 
-/** A SEARCH block shorter than this "matching exactly once" is luck, not
- *  correctness -- a 3-character match would silently patch the wrong element. */
-export const MIN_SEARCH_CHARS = 40
+/**
+ * A SEARCH block shorter than this "matching exactly once" is luck, not
+ * correctness -- a 3-character match would silently patch the wrong element.
+ *
+ * Raised from 40 for multi-page documents, where a table row or a nav item
+ * repeats across pages and 40 characters is about one line of Tailwind markup.
+ * Not higher: an ambiguous SEARCH costs a full rewrite, and so does a rejected
+ * one, so pushing this to 80 would just trade one failure mode for the other on
+ * ordinary small edits. The prompt quotes this number -- prompt.test.ts pins them
+ * together.
+ */
+export const MIN_SEARCH_CHARS = 60
 
 export interface EditBlock {
   search: string

@@ -68,8 +68,63 @@ describe('navigation escapes -- not covered by any CSP directive', () => {
 
   it('strips target and download from links', () => {
     const { html } = sanitizeMockupHtml('<html><body><a href="#" target="_blank" download="x.html">save</a></body></html>')
-    expect(html).not.toContain('download')
-    expect(html).not.toContain('target')
+    // Matched against the anchor rather than the whole document: the injected click
+    // interceptor legitimately mentions e.target, and a bare substring check would
+    // fail on that while saying nothing about the attribute this test is about.
+    expect(html).not.toMatch(/<a\b[^>]*\bdownload\b/)
+    expect(html).not.toMatch(/<a\b[^>]*\btarget=/)
+    expect(html).not.toContain('_blank')
+    expect(html).not.toContain('x.html')
+  })
+
+  it('injects a click interceptor, because href="#" NAVIGATES inside a srcdoc frame', () => {
+    // The frame's base URL is the embedder's, not about:srcdoc, so "#" resolves to
+    // the studio's own URL and a click loaded the whole studio into its own preview.
+    // Rewriting hrefs to "#" is what CREATES this case, so the two must ship together.
+    const { html } = sanitizeMockupHtml('<html><body><a href="https://evil.test">go</a></body></html>')
+    expect(html).toContain("closest('a[href]')")
+    expect(html).toContain('e.preventDefault()')
+    // Capture phase, so it beats the mockup's own handlers to the default action.
+    expect(html).toContain('}, true)')
+    // stopPropagation would break tab switching and modals, which inline script
+    // is permitted specifically to support.
+    expect(html).not.toContain('stopPropagation')
+  })
+
+  it('preserves everything multi-page navigation depends on', () => {
+    // The generated router switches pages by toggling `hidden` on [data-page]
+    // sections from a delegated [data-nav] click. If a future tightening of the
+    // attribute filter drops any of these, every nav item silently stops working
+    // and no test elsewhere would notice.
+    const { html } = sanitizeMockupHtml(
+      '<html><body><nav><a href="#" data-nav="home" aria-current="page" class="aria-[current=page]:bg-white/10">Home</a>' +
+        '<a href="#" data-nav="contacts">Contacts</a></nav>' +
+        '<main><section data-page="home">A</section><section data-page="contacts" hidden>B</section></main>' +
+        '</body></html>',
+    )
+    expect(html).toContain('data-page="home"')
+    expect(html).toContain('data-page="contacts"')
+    expect(html).toContain('data-nav="contacts"')
+    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('aria-[current=page]:bg-white/10')
+    expect(html).toMatch(/<section data-page="contacts"[^>]*hidden/)
+  })
+
+  it('keeps a body script but drops a head script -- where the router must live', () => {
+    // <head> is rebuilt from scratch, so a router placed there vanishes without a
+    // trace. This is the single assumption the multi-page prompt rests on.
+    const router = "document.querySelectorAll('[data-page]')"
+    const inBody = sanitizeMockupHtml(`<html><body><div>x</div><script>${router}</script></body></html>`)
+    expect(inBody.html).toContain(router)
+
+    const inHead = sanitizeMockupHtml(`<html><head><script>${router}</script></head><body>x</body></html>`)
+    expect(inHead.html).not.toContain(router)
+  })
+
+  it('keeps fragment links working by scrolling within the frame', () => {
+    const { html } = sanitizeMockupHtml('<html><body><a href="#pricing">Pricing</a><div id="pricing">x</div></body></html>')
+    expect(html).toContain('href="#pricing"')
+    expect(html).toContain('scrollIntoView')
   })
 })
 

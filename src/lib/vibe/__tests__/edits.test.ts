@@ -118,12 +118,35 @@ describe('applyEdits', () => {
     expect('<p>'.length).toBeLessThan(MIN_SEARCH_CHARS)
   })
 
-  it('refuses an ambiguous SEARCH that appears twice', () => {
-    const twice = doc('<div class="rounded-lg border p-4">card</div>\n<div class="rounded-lg border p-4">card</div>')
-    const res = applyEdits(twice, [{ search: '<div class="rounded-lg border p-4">card</div>', replace: 'x' }], MAX)
+  it('refuses a SEARCH that matches the same row on two pages', () => {
+    // The multi-page failure mode, and the reason MIN_SEARCH_CHARS went 40 -> 60:
+    // a table row or a card repeats across [data-page] sections, so a snippet that
+    // looks specific is ambiguous. Failing here is correct -- it costs a rewrite,
+    // whereas patching the wrong page silently would be worse.
+    const row = '<tr><td class="px-4 py-3">Devon P.</td><td class="px-4 py-3">Active</td></tr>'
+    const twoPages = doc(
+      `<section data-page="pipeline">${row}</section>\n<section data-page="contacts" hidden>${row}</section>`,
+    )
+    const res = applyEdits(twoPages, [{ search: row, replace: '<tr><td>x</td></tr>' }], MAX)
     expect(res.ok).toBe(false)
     if (res.ok) return
     expect(res.reason).toMatch(/appears 2 times/)
+    // Long enough to clear the length gate, so this is genuinely the ambiguity
+    // branch and not the too-short one.
+    expect(row.length).toBeGreaterThan(MIN_SEARCH_CHARS)
+  })
+
+  it('refuses an ambiguous SEARCH that appears twice', () => {
+    // The card markup is longer than it looks it needs to be: it has to clear
+    // MIN_SEARCH_CHARS so this exercises the ambiguity branch rather than the
+    // length gate, which runs first.
+    const card = '<div class="rounded-lg border border-slate-200 p-4 shadow-sm">card</div>'
+    const twice = doc(`${card}\n${card}`)
+    const res = applyEdits(twice, [{ search: card, replace: 'x' }], MAX)
+    expect(res.ok).toBe(false)
+    if (res.ok) return
+    expect(res.reason).toMatch(/appears 2 times/)
+    expect(card.length).toBeGreaterThan(MIN_SEARCH_CHARS)
   })
 
   it('reports a SEARCH that is not present', () => {
@@ -148,13 +171,16 @@ describe('applyEdits', () => {
     const res = applyEdits(
       page,
       [
+        // Both replacements carry a full class list rather than a minimal one, so
+        // the second SEARCH -- which matches what the first edit just wrote --
+        // still clears MIN_SEARCH_CHARS.
         {
           search: '<h1 class="text-2xl font-bold">Book an appointment today</h1>',
-          replace: '<h1 id="headline" class="text-3xl">Step one heading</h1>',
+          replace: '<h1 id="headline" class="text-3xl font-bold tracking-tight">Step one heading</h1>',
         },
         {
-          search: '<h1 id="headline" class="text-3xl">Step one heading</h1>',
-          replace: '<h1 id="headline" class="text-3xl">Step two heading</h1>',
+          search: '<h1 id="headline" class="text-3xl font-bold tracking-tight">Step one heading</h1>',
+          replace: '<h1 id="headline" class="text-3xl font-bold tracking-tight">Step two heading</h1>',
         },
       ],
       MAX,

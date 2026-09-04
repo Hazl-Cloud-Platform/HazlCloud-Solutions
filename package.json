@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3100",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev:vibe": "./scripts/run-with-doppler.sh next dev",
+    "dev:vibe": "./scripts/run-with-doppler.sh env VIBE_STORAGE_DIR=\"${VIBE_STORAGE_DIR:-.vibe-storage}\" next dev -p 3000",
     "start:vibe": "./scripts/run-with-doppler.sh next start",
     "vibe:migrate": "doppler run -p hazl-general -c prd -- npx tsx scripts/vibe-migrate.ts",
     "vibe:check": "doppler run -p hazl-general -c prd -- npx tsx scripts/vibe-check.ts",
     "vibe:hash": "npx tsx scripts/vibe-hash-password.ts",
     "vibe:probe": "doppler run -p dr-keys -c prd_llm_opus4-8 -- npx tsx scripts/vibe-probe-llm.ts",
-    "vibe:smoke": "./scripts/run-with-doppler.sh npx tsx scripts/vibe-smoke.ts"
+    "vibe:smoke": "./scripts/run-with-doppler.sh env VIBE_STORAGE_DIR=\"${VIBE_STORAGE_DIR:-.vibe-storage}\" npx tsx scripts/vibe-smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

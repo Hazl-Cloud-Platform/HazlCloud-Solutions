@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ArrowUp, Sparkles } from 'lucide-react'
+import { ArrowRight, ArrowUp, Plus, Sparkles } from 'lucide-react'
 import { readSse } from '@/lib/client/sse'
 import { useCountUp } from './useCountUp'
+import { ConfirmModal } from './ConfirmModal'
 import { ContactModal } from './ContactModal'
 import { HiddenAdminTrigger } from './HiddenAdminTrigger'
 import { MockupFrame } from './MockupFrame'
@@ -40,9 +41,16 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
   const [contactOpen, setContactOpen] = useState(false)
   const [exhausted, setExhausted] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [newDesignOpen, setNewDesignOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  /** A design row survives whose file does not. Discarding is the only way out. */
+  const [staleDesign, setStaleDesign] = useState(false)
 
   const busyRef = useRef(false)
+  const deletingRef = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const promptRef = useRef<HTMLTextAreaElement>(null)
   const turnstileRef = useRef<TurnstileHandle>(null)
   const tokens = useCountUp(liveTokens)
 
@@ -66,6 +74,9 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
         if (data.html) setHtml(data.html)
         if (data.design?.missing) {
           push({ role: 'problem', text: 'We could not load your previous design. Starting fresh.' })
+          // It does NOT start fresh on its own: the row survives, so every later
+          // turn fails on the missing file. Surfacing "New design" is the way out.
+          setStaleDesign(true)
         }
         if (typeof data.turnsLeft === 'number') {
           setTurnsLeft(data.turnsLeft)
@@ -172,7 +183,48 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
     [push],
   )
 
+  const startNewDesign = useCallback(async () => {
+    if (busyRef.current || deletingRef.current) return
+    deletingRef.current = true
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const res = await fetch('/api/vibe/design', { method: 'DELETE' })
+      const data = (await res.json().catch(() => null)) as
+        | { ok?: boolean; error?: string; turnsLeft?: number }
+        | null
+      if (!res.ok || !data?.ok) {
+        // Leave the dialog open so the visitor can retry or back out, and clear
+        // nothing locally: the design is only gone once the server says so.
+        setDeleteError(data?.error ?? 'We could not clear that design. Please try again.')
+        return
+      }
+      setHtml(null)
+      setMessages([])
+      setPrompt('')
+      setLiveTokens(0)
+      setProgress(0)
+      setStatus('')
+      setStaleDesign(false)
+      if (typeof data.turnsLeft === 'number') setTurnsLeft(data.turnsLeft)
+      setNewDesignOpen(false)
+      promptRef.current?.focus()
+      // Deliberately not reset: `exhausted`, because the server did not give the
+      // turns back either; and the Turnstile widget, which may be holding a solved
+      // single-use token the next generation needs. send() resets it because it
+      // SPENDS one -- discarding spends nothing.
+    } catch {
+      setDeleteError('We could not reach the server. Please try again.')
+    } finally {
+      deletingRef.current = false
+      setDeleting(false)
+    }
+  }, [])
+
   const canSend = !busy && !exhausted && prompt.trim().length > 0
+  // Hidden with nothing to discard, and hidden once the changes are spent: with
+  // turn_count never reset, discarding at zero left is pure loss.
+  const canStartOver = (html !== null || staleDesign) && !exhausted
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
@@ -194,6 +246,25 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
             <span className="hidden text-[13px] text-white/45 sm:inline">
               {turnsLeft} {turnsLeft === 1 ? 'change' : 'changes'} left
             </span>
+          )}
+          {canStartOver && (
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteError(null)
+                setNewDesignOpen(true)
+              }}
+              disabled={busy || deleting}
+              aria-label="Start a new design"
+              title={busy ? 'Wait for the current change to finish' : undefined}
+              // btn-outline, not btn-accent: the yellow CTA stays the one accent
+              // in the header. Disabled rather than hidden while a turn runs --
+              // a control that vanishes mid-generation reads as a fault.
+              className="btn-outline inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Plus size={15} strokeWidth={2.4} />
+              <span className="hidden sm:inline">New design</span>
+            </button>
           )}
           <button
             type="button"
@@ -302,6 +373,7 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
               >
                 <div className="relative">
                   <textarea
+                    ref={promptRef}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value.slice(0, 1200))}
                     onKeyDown={(e) => {
@@ -339,6 +411,28 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
       </div>
 
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} hasDesign={Boolean(html)} />
+
+      <ConfirmModal
+        open={newDesignOpen}
+        title="Start a new design?"
+        confirmLabel="Delete and start over"
+        cancelLabel="Keep my design"
+        pending={deleting}
+        error={deleteError}
+        onConfirm={() => void startNewDesign()}
+        onCancel={() => setNewDesignOpen(false)}
+      >
+        <p>
+          Your current design will be permanently deleted — the page and every change you&apos;ve made to it. We
+          don&apos;t keep a copy and there&apos;s no undo.
+        </p>
+        {turnsLeft !== null && (
+          <p>
+            Starting over doesn&apos;t give you more changes: you&apos;ll still have{' '}
+            <span className="font-semibold text-white/85">{turnsLeft}</span> left.
+          </p>
+        )}
+      </ConfirmModal>
     </div>
   )
 }

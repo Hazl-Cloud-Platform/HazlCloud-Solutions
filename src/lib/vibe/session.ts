@@ -78,6 +78,24 @@ export async function markTurnstileVerified(sessionId: string): Promise<void> {
   await query(`UPDATE ${T.sessions} SET "turnstile_verified_at" = now() WHERE "id" = $1`, [sessionId])
 }
 
+/**
+ * Cuts the replayed conversation off at the current end of the turn log, so a
+ * discarded design's chat stops being handed to the model on later turns.
+ *
+ * The rows are KEPT deliberately. ipTurnsToday() counts turns to enforce the per-IP
+ * daily cap; deleting them here would turn "start a new design" into an unlimited
+ * generation loop, with only the dollar budget left to stop it.
+ */
+export async function resetTurnHistory(sessionId: string): Promise<void> {
+  await query(
+    `UPDATE ${T.sessions}
+        SET "history_from_turn_id" = COALESCE(
+              (SELECT max("id") FROM ${T.turns} WHERE "session_id" = $1), 0)
+      WHERE "id" = $1`,
+    [sessionId],
+  )
+}
+
 export async function recordFirstPrompt(sessionId: string, prompt: string): Promise<void> {
   await query(`UPDATE ${T.sessions} SET "first_prompt" = $2 WHERE "id" = $1 AND "first_prompt" IS NULL`, [
     sessionId,
@@ -104,8 +122,14 @@ export async function appendTurn(args: {
 
 export async function loadTurns(sessionId: string, limit = 20): Promise<{ role: 'user' | 'assistant'; content: string }[]> {
   const rows = await query<{ role: 'user' | 'assistant'; content: string }>(
+    // "id" > the watermark skips everything before the visitor's last "new design".
+    // An id rather than a timestamp: turns.id is an identity column, this query
+    // already sorts by it, and (session_id, id) is an existing index.
     `SELECT "role","content" FROM (
-       SELECT "id","role","content" FROM ${T.turns} WHERE "session_id" = $1 ORDER BY "id" DESC LIMIT $2
+       SELECT "id","role","content" FROM ${T.turns}
+        WHERE "session_id" = $1
+          AND "id" > COALESCE((SELECT "history_from_turn_id" FROM ${T.sessions} WHERE "id" = $1), 0)
+        ORDER BY "id" DESC LIMIT $2
      ) recent ORDER BY "id" ASC`,
     [sessionId, limit],
   )

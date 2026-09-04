@@ -51,6 +51,30 @@ describe('assertSameOrigin', () => {
     expect(assertSameOrigin(post({ origin: 'not a url' }))).toBe(false)
   })
 
+  it('accepts a localhost origin outside production', () => {
+    // dev:vibe injects the production site URL via Doppler, so without this the
+    // studio cannot be exercised locally at all.
+    expect(assertSameOrigin(post({ origin: 'http://localhost:3000' }))).toBe(true)
+    expect(assertSameOrigin(post({ origin: 'http://127.0.0.1:3001' }))).toBe(true)
+    expect(assertSameOrigin(post({ referer: 'http://localhost:3000/startup/studio' }))).toBe(true)
+  })
+
+  it('rejects a localhost origin in production', () => {
+    const prev = process.env.NODE_ENV
+    // NODE_ENV is readonly in the Next types; the cast is the point of the test.
+    ;(process.env as Record<string, string>).NODE_ENV = 'production'
+    try {
+      expect(assertSameOrigin(post({ origin: 'http://localhost:3000' }))).toBe(false)
+      expect(assertSameOrigin(post({ referer: 'http://localhost:3000/x' }))).toBe(false)
+    } finally {
+      ;(process.env as Record<string, string>).NODE_ENV = prev as string
+    }
+  })
+
+  it('rejects a hostname that merely contains localhost', () => {
+    expect(assertSameOrigin(post({ origin: 'https://localhost.evil.tld' }))).toBe(false)
+  })
+
   it('is permissive only when the site URL is unconfigured outside production', () => {
     // Failing OPEN in production would silently disable the check on every
     // mutating route, which is the thing this function exists to prevent.
