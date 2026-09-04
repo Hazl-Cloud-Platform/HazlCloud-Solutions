@@ -22,6 +22,24 @@ export const DEFAULT_MONTHLY_BUDGET_USD = 100
  */
 export const DEFAULT_DAILY_BUDGET_USD = 12
 
+/**
+ * How many changes one visitor session gets: the first generation plus its
+ * refinements. Admin-settable, so this is only the value a fresh install (or an
+ * unreadable stored value) falls back to -- read the live number with
+ * `getMaxTurnsPerSession()` and never import a constant for it.
+ */
+export const DEFAULT_MAX_TURNS_PER_SESSION = 5
+
+/**
+ * Hard ceiling on what the admin form will accept.
+ *
+ * Turns are the one lever that multiplies spend directly: at ~$0.15 a change,
+ * a runaway value entered by accident would be governed only by the per-session
+ * cost cap, which sits well above a normal session precisely so it never fires
+ * during ordinary use. Twenty is generous for a mockup and still bounded.
+ */
+export const MAX_TURNS_PER_SESSION_CEILING = 20
+
 export async function getSetting(key: string): Promise<string | null> {
   const row = await queryOne<{ value: string }>(`SELECT "value" FROM ${T.settings} WHERE "key" = $1`, [key])
   return row?.value ?? null
@@ -47,6 +65,16 @@ export async function getMonthlyBudgetUsd(): Promise<number> {
 
 export async function getDailyBudgetUsd(): Promise<number> {
   return getNumberSetting('daily_budget_usd', DEFAULT_DAILY_BUDGET_USD)
+}
+
+/** The live per-session change allowance. A stored value outside the accepted
+ *  range is treated as absent rather than obeyed: the setting is reachable only
+ *  through the validated admin route, so anything else got there by hand. */
+export async function getMaxTurnsPerSession(): Promise<number> {
+  const raw = await getSetting('max_turns_per_session')
+  const n = raw === null ? Number.NaN : Number(raw)
+  if (!Number.isInteger(n) || n < 1 || n > MAX_TURNS_PER_SESSION_CEILING) return DEFAULT_MAX_TURNS_PER_SESSION
+  return n
 }
 
 export async function getAdminSessionEpoch(): Promise<number> {
@@ -87,6 +115,21 @@ export function validatePricing(input: unknown): { ok: true; value: Pricing } | 
     out[key] = n
   }
   return { ok: true, value: out }
+}
+
+/** Guards the admin "changes per session" form. Whole numbers only -- the value
+ *  is compared against `turn_count`, so 2.5 would let a session claim a third
+ *  change and then refuse the fourth for reasons nobody could read off the UI. */
+export function validateMaxTurnsPerSession(
+  input: unknown,
+): { ok: true; value: number } | { ok: false; error: string } {
+  const n = typeof input === 'number' ? input : Number(input)
+  if (!Number.isFinite(n)) return { ok: false, error: 'Changes per session must be a number' }
+  if (!Number.isInteger(n)) return { ok: false, error: 'Changes per session must be a whole number' }
+  if (n < 1 || n > MAX_TURNS_PER_SESSION_CEILING) {
+    return { ok: false, error: `Changes per session must be between 1 and ${MAX_TURNS_PER_SESSION_CEILING}` }
+  }
+  return { ok: true, value: n }
 }
 
 export function validateBudget(input: unknown, label: string, max: number): { ok: true; value: number } | { ok: false; error: string } {

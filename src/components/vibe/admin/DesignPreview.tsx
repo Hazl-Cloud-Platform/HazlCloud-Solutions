@@ -7,12 +7,25 @@ import type { DesignRow } from '@/types/vibe'
 /**
  * Full-screen preview of a stored design.
  *
- * The iframe has `sandbox` with NO `allow-scripts`. This is the single most
- * important difference from the visitor's preview: these documents were written by
- * a model following an anonymous stranger's instructions, and this tab holds a
- * signed-in admin session. Rendering them inert means no amount of hostile content
- * in a stored design can act while an admin is looking at it -- so the design loses
- * its interactivity here, which is the right trade.
+ * The frame runs `sandbox="allow-scripts"` -- the same flags as the visitor's own
+ * preview, and deliberately so. Every mockup is styled entirely by the Tailwind
+ * CDN, which is a SCRIPT: with scripts blocked the document renders as unstyled
+ * markup on a white page, which is what this preview used to show. A preview that
+ * does not look like the thing being previewed is not a preview.
+ *
+ * What makes that safe is the same thing that makes the visitor's frame safe:
+ * `allow-scripts` WITHOUT `allow-same-origin` gives the frame an opaque origin, so
+ * it cannot read cookies or storage, cannot reach `window.parent`, and cannot call
+ * our own `/api/vibe/admin/*` routes with the admin's ambient session. The stored
+ * document also carries its own CSP with `connect-src 'none'`, and no
+ * `allow-top-navigation` means it cannot move the admin's tab. Never add
+ * `allow-same-origin`: it cancels the sandbox outright, and this tab holds a
+ * signed-in admin session.
+ *
+ * The residual risk, unchanged from the studio frame, is that a mockup's own
+ * inline script can navigate ITS OWN frame -- so a hostile document could phone
+ * home from an admin's browser. The `Scripts off` toggle exists for that: it
+ * re-renders the document inert, at the cost of the styling.
  *
  * The HTML also arrives as JSON rather than from a text/html route, so there is no
  * endpoint that serves visitor-authored markup from our own origin.
@@ -21,6 +34,7 @@ export function DesignPreview({ designId, onClose }: { designId: string; onClose
   const [html, setHtml] = useState<string | null>(null)
   const [design, setDesign] = useState<DesignRow | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [scripts, setScripts] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -58,16 +72,32 @@ export function DesignPreview({ designId, onClose }: { designId: string; onClose
         <div className="min-w-0">
           <p className="truncate text-[14px] font-semibold">{design?.title ?? 'Design preview'}</p>
           <p className="text-[12px] text-white/40">
-            Scripts are disabled in this preview — it is a stored visitor document.
+            {scripts
+              ? 'Exactly what the visitor saw — sandboxed, with no access to this page or your session.'
+              : 'Scripts off, so Tailwind cannot load and the document renders unstyled.'}
           </p>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Close preview"
-          className="btn-outline shrink-0 rounded-lg px-3 py-2 text-[13px] font-semibold"
-        >
-          <X size={16} strokeWidth={2.2} />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => setScripts((s) => !s)}
+            aria-pressed={!scripts}
+            title={
+              scripts
+                ? 'Render the document inert. Its styling comes from a script, so it will look unstyled.'
+                : 'Run the document as the visitor saw it, inside the sandbox.'
+            }
+            className="btn-outline rounded-lg px-3 py-2 text-[12.5px] font-semibold"
+          >
+            {scripts ? 'Scripts off' : 'Scripts on'}
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="Close preview"
+            className="btn-outline rounded-lg px-3 py-2 text-[13px] font-semibold"
+          >
+            <X size={16} strokeWidth={2.2} />
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -76,8 +106,12 @@ export function DesignPreview({ designId, onClose }: { designId: string; onClose
         </div>
       ) : html ? (
         <iframe
+          // Keyed on the mode: changing `sandbox` on a live frame does not
+          // re-apply it to the document already loaded there, so the frame has to
+          // be a new element for the toggle to mean anything.
+          key={scripts ? 'scripts' : 'inert'}
           srcDoc={html}
-          sandbox=""
+          sandbox={scripts ? 'allow-scripts' : ''}
           referrerPolicy="no-referrer"
           title="Stored design preview"
           className="flex-1 rounded-[12px] border-0 bg-white"

@@ -1,17 +1,19 @@
 import { T, query, queryOne } from './db'
 import { dayStartUtc, monthStartUtc, getDaySpendUsd, getMonthSpendUsd } from './budget'
-import { getDailyBudgetUsd, getMonthlyBudgetUsd, getPricing } from './settings'
+import { getDailyBudgetUsd, getMaxTurnsPerSession, getMonthlyBudgetUsd, getPricing } from './settings'
+import { ipTurnCap } from './limits'
 import { allDesignPaths } from './designs'
 import { scanStorage } from './storage'
 import type { AdminOverview, UsageDay } from '@/types/vibe'
 
 export async function adminOverview(): Promise<AdminOverview> {
-  const [monthSpendUsd, daySpendUsd, monthBudgetUsd, dayBudgetUsd, pricing] = await Promise.all([
+  const [monthSpendUsd, daySpendUsd, monthBudgetUsd, dayBudgetUsd, pricing, maxTurnsPerSession] = await Promise.all([
     getMonthSpendUsd(),
     getDaySpendUsd(),
     getMonthlyBudgetUsd(),
     getDailyBudgetUsd(),
     getPricing(),
+    getMaxTurnsPerSession(),
   ])
 
   const activity = await queryOne<{
@@ -56,6 +58,10 @@ export async function adminOverview(): Promise<AdminOverview> {
     diskFreeBytes: Number.isFinite(stats.freeBytes) ? stats.freeBytes : 0,
     largestBytes: stats.largestBytes,
     pricing,
+    maxTurnsPerSession,
+    // Reported alongside it because the two interact: the per-IP daily cap is
+    // what a visitor actually meets first once the session allowance is raised.
+    maxTurnsPerIpDay: ipTurnCap(maxTurnsPerSession),
   }
 }
 

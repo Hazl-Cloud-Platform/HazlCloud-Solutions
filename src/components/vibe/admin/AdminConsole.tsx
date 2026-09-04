@@ -15,7 +15,16 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'usage', label: 'Usage' },
 ]
 
-const money = (n: number) => `$${n.toFixed(2)}`
+/**
+ * Every amount in this console is US dollars. The rate card is quoted per MTok in
+ * USD and `cost_usd` is stored in USD, so nothing here is ever converted -- but
+ * HAZL bills in CAD, and a bare "$12.34" on a Canadian desk is ambiguous enough
+ * to be read as the wrong number. The currency is named wherever a figure stands
+ * on its own.
+ */
+const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = (n: number) => USD.format(n)
+const moneyUsd = (n: number) => `${USD.format(n)} USD`
 const bytes = (n: number) => (n > 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`)
 const when = (s: string) => new Date(s).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -311,7 +320,10 @@ function Meter({ label, spent, budget }: { label: string; spent: number; budget:
   const colour = pct >= 90 ? '#ef4444' : pct >= 75 ? '#f59e0b' : 'var(--accent)'
   return (
     <div className="rounded-[12px] border border-white/10 bg-white/[0.02] p-4">
-      <p className="text-[11.5px] font-bold uppercase tracking-[.12em] text-white/40">{label}</p>
+      <p className="text-[11.5px] font-bold uppercase tracking-[.12em] text-white/40">
+        {label}
+        <span className="text-white/25"> · USD</span>
+      </p>
       <p className="mt-2 text-[24px] font-bold tracking-[-.02em] tabular-nums">
         {money(spent)}
         <span className="text-[14px] font-medium text-white/35"> of {money(budget)}</span>
@@ -346,6 +358,7 @@ function OverviewTab({
 }) {
   const [monthly, setMonthly] = useState(String(overview.monthBudgetUsd))
   const [daily, setDaily] = useState(String(overview.dayBudgetUsd))
+  const [changes, setChanges] = useState(String(overview.maxTurnsPerSession))
 
   return (
     <section className="mt-6">
@@ -389,9 +402,10 @@ function OverviewTab({
       </div>
 
       <div className="mt-6 rounded-[12px] border border-white/10 bg-white/[0.02] p-5">
-        <h2 className="text-[15px] font-bold">Spending limits</h2>
+        <h2 className="text-[15px] font-bold">Limits</h2>
         <p className="mt-1 text-[12.5px] text-white/45">
-          Checked before every model call. When a limit is reached the studio offers visitors a call instead.
+          Spending is checked before every model call, in US dollars. When a limit is reached the studio offers
+          visitors a call instead.
         </p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <label className="text-[12.5px] text-white/60">
@@ -418,6 +432,18 @@ function OverviewTab({
               className="mt-1.5 block w-32 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-[14px] tabular-nums text-white focus:border-white/35 focus:outline-none"
             />
           </label>
+          <label className="text-[12.5px] text-white/60">
+            Changes per session
+            <input
+              type="number"
+              min={1}
+              max={20}
+              step="1"
+              value={changes}
+              onChange={(e) => setChanges(e.target.value)}
+              className="mt-1.5 block w-32 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-[14px] tabular-nums text-white focus:border-white/35 focus:outline-none"
+            />
+          </label>
           <button
             disabled={busy}
             onClick={() =>
@@ -426,7 +452,11 @@ function OverviewTab({
                   fetch('/api/vibe/admin/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ monthlyBudgetUsd: Number(monthly), dailyBudgetUsd: Number(daily) }),
+                    body: JSON.stringify({
+                      monthlyBudgetUsd: Number(monthly),
+                      dailyBudgetUsd: Number(daily),
+                      maxTurnsPerSession: Number(changes),
+                    }),
                   }),
                 'Limits updated.',
               )
@@ -437,11 +467,19 @@ function OverviewTab({
           </button>
         </div>
 
+        <p className="mt-3 text-[12.5px] leading-relaxed text-white/40">
+          A change is one visitor prompt: the first generation plus its refinements, so{' '}
+          {overview.maxTurnsPerSession} means one design and {overview.maxTurnsPerSession - 1} edits. It applies to
+          sessions already running, and at roughly $0.15 a change it moves spend directly. One IP address is still
+          held to {overview.maxTurnsPerIpDay} changes a day across every session it starts.
+        </p>
+
         <div className="mt-5 border-t border-white/10 pt-4">
           <p className="text-[12.5px] text-white/45">
-            Pricing in use: ${overview.pricing.input_per_mtok}/MTok in, ${overview.pricing.output_per_mtok}/MTok out,
-            cache write ${overview.pricing.cache_write_per_mtok}, cache read ${overview.pricing.cache_read_per_mtok}.
-            Each call is priced when it happens, so changing these never rewrites past spend.
+            Pricing in use, USD per MTok: ${overview.pricing.input_per_mtok} in, ${overview.pricing.output_per_mtok}{' '}
+            out, cache write ${overview.pricing.cache_write_per_mtok}, cache read $
+            {overview.pricing.cache_read_per_mtok}. Each call is priced when it happens, so changing these never
+            rewrites past spend.
           </p>
           <button
             disabled={busy}
@@ -486,8 +524,12 @@ function UsageTab({ usage, days, setDays }: { usage: UsageDay[]; days: number; s
             {d} days
           </button>
         ))}
-        <span className="ml-auto text-[13px] text-white/50 tabular-nums">Total {money(total)}</span>
+        <span className="ml-auto text-[13px] text-white/50 tabular-nums">Total {moneyUsd(total)}</span>
       </div>
+
+      <p className="mb-4 text-[12.5px] text-white/35">
+        Amounts are US dollars, priced at the rate card in force when each call ran.
+      </p>
 
       {usage.length === 0 ? (
         <Empty>No model calls in this window.</Empty>
@@ -502,7 +544,7 @@ function UsageTab({ usage, days, setDays }: { usage: UsageDay[]; days: number; s
                 <th className="px-3.5 py-2.5 text-right font-bold">Out</th>
                 <th className="px-3.5 py-2.5 text-right font-bold">Cache read</th>
                 <th className="px-3.5 py-2.5 text-right font-bold">Fallbacks</th>
-                <th className="px-3.5 py-2.5 text-right font-bold">Cost</th>
+                <th className="px-3.5 py-2.5 text-right font-bold">Cost (USD)</th>
                 <th className="w-[110px] px-3.5 py-2.5" />
               </tr>
             </thead>

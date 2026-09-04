@@ -6,16 +6,17 @@ import {
   LIMIT_MESSAGES,
   MAX_CONCURRENT_GLOBAL,
   MAX_PROMPT_CHARS,
-  MAX_TURNS_PER_IP,
-  MAX_TURNS_PER_SESSION,
   TURNSTILE_RECHALLENGE_AFTER,
   claimTurn,
   createSessionIfAllowed,
+  ipTurnCap,
   ipTurnsToday,
   releaseTurn,
+  turnCapMessage,
 } from '@/lib/vibe/limits'
 import { SLOTS_FULL, tryWithLock, withGlobalSlot } from '@/lib/vibe/mutex'
 import { getSession, markTurnstileVerified, mintSessionCookie, requireSession } from '@/lib/vibe/session'
+import { getMaxTurnsPerSession } from '@/lib/vibe/settings'
 import { verifyTurnstile } from '@/lib/vibe/turnstile'
 import type { VibeEvent } from '@/types/vibe'
 
@@ -100,15 +101,21 @@ export async function POST(req: Request) {
 
   const sessionId = session.id
 
-  if (session.turn_count >= MAX_TURNS_PER_SESSION) {
-    return fail(429, LIMIT_MESSAGES.turn_cap, { code: 'turn_cap' })
+  // Read ONCE per request and thread it through: an admin saving a new allowance
+  // mid-request must not have one request enforce two different caps -- the
+  // pre-flight rejection, the claim, and the copy the visitor reads all have to
+  // agree on the same number.
+  const maxTurns = await getMaxTurnsPerSession()
+
+  if (session.turn_count >= maxTurns) {
+    return fail(429, turnCapMessage(maxTurns), { code: 'turn_cap' })
   }
-  if ((await ipTurnsToday(ipHash)) >= MAX_TURNS_PER_IP) {
+  if ((await ipTurnsToday(ipHash)) >= ipTurnCap(maxTurns)) {
     return fail(429, LIMIT_MESSAGES.ip_turns, { code: 'ip_cap' })
   }
 
   // Pre-flight spend check, before a turn is claimed, so a refused request never
-  // costs the visitor one of their five.
+  // costs the visitor one of their changes.
   const { block } = await checkBudget(sessionId)
   if (block) return fail(429, limitMessage(block), { code: block })
 
@@ -133,7 +140,7 @@ export async function POST(req: Request) {
       // Seeded from the session we already loaded. Left at 0, every early exit
       // (busy, a transient throw) would emit done{turnsLeft:0} and the client
       // would latch "that's the end of the free preview" mid-session.
-      let turnsLeft = Math.max(0, MAX_TURNS_PER_SESSION - session.turn_count)
+      let turnsLeft = Math.max(0, maxTurns - session.turn_count)
       let changed = false
       let claimed = false
 
@@ -145,9 +152,9 @@ export async function POST(req: Request) {
         // later and spend budget twice.
         const outcome = await tryWithLock(`vibe:${sessionId}`, async () =>
           withGlobalSlot(MAX_CONCURRENT_GLOBAL, async () => {
-            const claim = await claimTurn(sessionId)
+            const claim = await claimTurn(sessionId, maxTurns)
             if (!claim.ok) {
-              emit({ type: 'error', code: 'turn_cap', message: LIMIT_MESSAGES.turn_cap })
+              emit({ type: 'error', code: 'turn_cap', message: turnCapMessage(maxTurns) })
               return { ran: false as const }
             }
             claimed = true

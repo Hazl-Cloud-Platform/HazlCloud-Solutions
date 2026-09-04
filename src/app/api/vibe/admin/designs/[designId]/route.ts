@@ -13,8 +13,9 @@ type Params = { params: { designId: string } }
  *
  * Deliberately NOT a text/html route. Serving visitor-authored HTML from our own
  * origin would make one missing response header a same-origin XSS endpoint against
- * a signed-in admin. The client renders this into an iframe WITHOUT allow-scripts,
- * so nothing in it executes in an authenticated tab at all.
+ * a signed-in admin. The client renders this into a `srcDoc` iframe sandboxed the
+ * same way the visitor's own preview is -- `allow-scripts` and nothing else, so
+ * the document runs in an opaque origin that cannot touch the admin's session.
  */
 export async function GET(_req: Request, { params }: Params) {
   if (!(await currentAdmin())) return unauthorized()

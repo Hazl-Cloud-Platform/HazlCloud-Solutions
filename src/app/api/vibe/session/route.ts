@@ -2,8 +2,9 @@ import { cookies } from 'next/headers'
 import { requestIpHash } from '@/lib/vibe/ip'
 import { latestDesign } from '@/lib/vibe/designs'
 import { readDesign } from '@/lib/vibe/storage'
-import { MAX_TURNS_PER_SESSION, TURNSTILE_RECHALLENGE_AFTER } from '@/lib/vibe/limits'
+import { TURNSTILE_RECHALLENGE_AFTER } from '@/lib/vibe/limits'
 import { requireSession } from '@/lib/vibe/session'
+import { getMaxTurnsPerSession } from '@/lib/vibe/settings'
 import { ok, serverError, vibeEnabled } from '@/lib/vibe/http'
 
 export const runtime = 'nodejs'
@@ -16,9 +17,9 @@ export async function GET(req: Request) {
 
   try {
     const ipHash = requestIpHash(req)
-    const session = await requireSession(ipHash)
+    const [session, maxTurns] = await Promise.all([requireSession(ipHash), getMaxTurnsPerSession()])
     if (!session) {
-      return ok({ enabled: true, session: null, turnsLeft: MAX_TURNS_PER_SESSION, needsTurnstile: true })
+      return ok({ enabled: true, session: null, turnsLeft: maxTurns, needsTurnstile: true })
     }
 
     const design = await latestDesign(session.id)
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
     return ok({
       enabled: true,
       session: { id: session.id, turnCount: session.turn_count },
-      turnsLeft: Math.max(0, MAX_TURNS_PER_SESSION - session.turn_count),
+      turnsLeft: Math.max(0, maxTurns - session.turn_count),
       needsTurnstile: session.turn_count >= TURNSTILE_RECHALLENGE_AFTER,
       design: design ? { id: design.id, title: design.title, bytes: design.bytes, missing } : null,
       html,

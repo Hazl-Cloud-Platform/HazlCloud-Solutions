@@ -234,11 +234,10 @@ export function StudioShell({ turnstileSiteKey }: { turnstileSiteKey: string | n
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/hazlCloud-logo-bw2.png" alt="" width={26} height={26} className="h-[26px] w-[26px]" />
             <span className="text-[15px] font-bold tracking-[-.03em] text-white">HAZL</span>
-            <span className="hidden text-[15px] font-semibold tracking-[-.03em] text-white/45 sm:inline">STUDIO</span>
+            <span className="hidden text-[15px] font-semibold tracking-[-.03em] text-white/45 sm:inline">
+              SOLUTIONS STUDIO
+            </span>
           </Link>
-          <span className="hidden rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[.12em] text-white/45 md:inline">
-            Preview only
-          </span>
         </div>
 
         <div className="flex items-center gap-3">

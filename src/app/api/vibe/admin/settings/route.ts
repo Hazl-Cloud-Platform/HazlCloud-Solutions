@@ -3,10 +3,12 @@ import { assertSameOrigin, badRequest, forbidden, ok, serverError, unauthorized 
 import {
   bumpAdminSessionEpoch,
   getDailyBudgetUsd,
+  getMaxTurnsPerSession,
   getMonthlyBudgetUsd,
   getPricing,
   setSetting,
   validateBudget,
+  validateMaxTurnsPerSession,
   validatePricing,
 } from '@/lib/vibe/settings'
 
@@ -16,12 +18,13 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   if (!(await currentAdmin())) return unauthorized()
   try {
-    const [monthlyBudgetUsd, dailyBudgetUsd, pricing] = await Promise.all([
+    const [monthlyBudgetUsd, dailyBudgetUsd, pricing, maxTurnsPerSession] = await Promise.all([
       getMonthlyBudgetUsd(),
       getDailyBudgetUsd(),
       getPricing(),
+      getMaxTurnsPerSession(),
     ])
-    return ok({ monthlyBudgetUsd, dailyBudgetUsd, pricing })
+    return ok({ monthlyBudgetUsd, dailyBudgetUsd, pricing, maxTurnsPerSession })
   } catch (err) {
     console.error('[vibe] admin settings get:', err)
     return serverError()
@@ -35,6 +38,7 @@ export async function PUT(req: Request) {
     const body = (await req.json().catch(() => null)) as {
       monthlyBudgetUsd?: unknown
       dailyBudgetUsd?: unknown
+      maxTurnsPerSession?: unknown
       pricing?: unknown
       signOutAll?: unknown
     } | null
@@ -57,6 +61,15 @@ export async function PUT(req: Request) {
       const v = validateBudget(body.dailyBudgetUsd, 'Daily budget', 1_000)
       if (!v.ok) return badRequest(v.error)
       await setSetting('daily_budget_usd', String(v.value))
+    }
+    // Applies to sessions in flight as well as new ones: a visitor mid-session
+    // gains or loses changes the moment this is saved, which is the behaviour the
+    // admin expects from a live limit. Lowering it below a session's spent count
+    // simply leaves that session with none.
+    if (body.maxTurnsPerSession !== undefined) {
+      const v = validateMaxTurnsPerSession(body.maxTurnsPerSession)
+      if (!v.ok) return badRequest(v.error)
+      await setSetting('max_turns_per_session', String(v.value))
     }
     if (body.pricing !== undefined) {
       const v = validatePricing(body.pricing)

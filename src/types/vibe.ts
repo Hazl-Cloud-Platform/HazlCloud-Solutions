@@ -109,6 +109,10 @@ export interface AdminOverview {
   diskFreeBytes: number
   largestBytes: number
   pricing: Pricing
+  /** Changes one visitor session gets. Admin-settable, so never assume 5. */
+  maxTurnsPerSession: number
+  /** The rolling 24h per-IP turn cap in force, floored against the above. */
+  maxTurnsPerIpDay: number
 }
 
 export interface UsageDay {
