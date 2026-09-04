@@ -6,7 +6,12 @@ export const CTA_URL = 'https://calendly.com/anthony-tam-hazl/30min'
 /** The free UI-mockup studio. Internal, so plain next/link navigation. */
 export const STUDIO_URL = '/startup/studio'
 
-export type Partner = { name: string; src: string }
+export type Partner = {
+  name: string
+  src: string
+  /** Shrinks this logo's box relative to the 56x220 default. */
+  scale?: number
+}
 
 // Logos live in /public/brand/partners/. Tiles whose image is missing are
 // hidden gracefully by <PartnerMarquee>.
@@ -24,6 +29,9 @@ export const PARTNERS: Partner[] = [
   { name: 'University of Calgary', src: '/brand/partners/university-of-calgary.png' },
   { name: 'APEGA', src: '/brand/partners/apega.png' },
   { name: 'BMO', src: '/brand/partners/bmo.png' },
+  { name: 'ATCO', src: '/brand/partners/atco.svg', scale: 0.88 },
+  { name: 'Enbridge', src: '/brand/partners/enbridge.svg', scale: 0.88 },
+  { name: 'S.i. Systems', src: '/brand/partners/si-systems.png' },
   { name: 'Web Summit', src: '/brand/partners/websummit.png' },
 ]
 

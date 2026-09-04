@@ -54,8 +54,10 @@ export function PartnerMarquee() {
           onLoad={() => setStatus((prev) => ({ ...prev, [i]: 'ok' }))}
           onError={() => setStatus((prev) => ({ ...prev, [i]: 'fail' }))}
           style={{
-            maxHeight: 56,
-            maxWidth: 220,
+            // `scale` dials an individual logo back when its artwork is tight
+            // enough to otherwise dominate the strip (see PARTNERS).
+            maxHeight: 56 * (p.scale ?? 1),
+            maxWidth: 220 * (p.scale ?? 1),
             width: 'auto',
             objectFit: 'contain',
             display: 'block',
