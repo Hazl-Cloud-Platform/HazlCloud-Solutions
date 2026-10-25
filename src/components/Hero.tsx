@@ -29,7 +29,7 @@ export function Hero() {
       <Navbar />
 
       {/* Hero copy - anchored to bottom */}
-      <div className="relative z-10 flex-1 flex flex-col justify-end px-4 sm:px-6 md:px-12 pb-8 md:pb-14">
+      <div className="relative z-10 flex-1 flex flex-col justify-end px-4 sm:px-6 md:px-12 pb-24 md:pb-28">
         <div className="flex flex-col md:flex-row items-end gap-8">
           <div className="flex-1 min-w-0 max-w-3xl">
             <h1
