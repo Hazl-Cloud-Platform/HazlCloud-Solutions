@@ -5,7 +5,7 @@
  */
 const STATS = [
   {
-    value: '60',
+    value: '60+',
     label: 'Developers and DevOps engineers',
     sub: 'Dev + Ops under one roof',
   },

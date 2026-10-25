@@ -80,7 +80,7 @@ export default function ApproachPage() {
             <div className="about-copy">
               <h2 className="approach-h2">DevOps engineers with an operator&apos;s mindset.</h2>
               <p className="lead about-lead">
-                We are a bench of 60 developers and DevOps engineers based in Calgary, Canada. Our specialty is the
+                We are a bench of 60+ developers and DevOps engineers based in Calgary, Canada. Our specialty is the
                 operations side: cloud, CI/CD, infrastructure as code, observability, security and governance - the
                 day-to-day systems work that keeps the apps your teams build running in production.
               </p>
@@ -242,7 +242,7 @@ export default function ApproachPage() {
         {/* 6. Team */}
         <section className="approach-section reveal">
           <div className="eyebrow">Who you&apos;re working with</div>
-          <h2 className="approach-h2">60 engineers. Dev and Ops under one roof.</h2>
+          <h2 className="approach-h2">60+ engineers. Dev and Ops under one roof.</h2>
 
           <div className="team-wrap">
             <div className="team-roles">

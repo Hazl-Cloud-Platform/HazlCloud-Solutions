@@ -12,7 +12,7 @@ import { EnterpriseFooter } from '@/components/enterprise/EnterpriseFooter'
 
 // Kept under 160 characters so search results and link previews show it whole.
 const DESCRIPTION =
-  'DevOps consulting & implementation: 60 engineers who embed as forward-deployed engineers (FDE), second into your team, or run it as a managed service.'
+  'DevOps consulting & implementation: 60+ engineers who embed as forward-deployed engineers (FDE), second into your team, or run it as a managed service.'
 
 export const metadata: Metadata = {
   title: { absolute: 'HAZL Solutions — DevOps consulting & implementation' },

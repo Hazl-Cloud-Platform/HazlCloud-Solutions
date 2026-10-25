@@ -255,7 +255,7 @@ export default function ChooserPage() {
                 lineHeight: 1.5,
               }}
             >
-              Your teams are shipping AI-built apps faster than IT can run them. Our 60 DevOps and
+              Your teams are shipping AI-built apps faster than IT can run them. Our 60+ DevOps and
               software engineers embed, second, or run it for you.
             </div>
             <div
