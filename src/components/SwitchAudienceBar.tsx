@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 
 const LABELS: Record<'startup' | 'enterprise', string> = {
   startup: 'Startup / small business',
-  enterprise: 'Scale-up / enterprise',
+  enterprise: 'Enterprise',
 }
 
 /**

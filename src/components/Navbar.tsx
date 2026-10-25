@@ -6,6 +6,12 @@ import { Menu, X, Newspaper } from 'lucide-react'
 import { LogoMark } from './LogoMark'
 import { MobileMenu } from './MobileMenu'
 
+const NAV_LINKS = [
+  { label: 'Services', href: '/enterprise#services' },
+  { label: 'Engagement', href: '/enterprise#engagement' },
+  { label: 'Approach', href: '/approach' },
+]
+
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -27,6 +33,18 @@ export function Navbar() {
         </a>
 
         <div className="hidden lg:flex items-center gap-6 text-sm text-white/85">
+          {/* Hash targets are absolute (/enterprise#…) so the shared Navbar's
+              links still resolve when it is rendered on another page. */}
+          {NAV_LINKS.map((link, i) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="hover:text-white transition-colors animate-blur-fade-up"
+              style={{ animationDelay: `${50 + i * 50}ms` }}
+            >
+              {link.label}
+            </Link>
+          ))}
           <Link
             href="/insights"
             aria-label="Insights"

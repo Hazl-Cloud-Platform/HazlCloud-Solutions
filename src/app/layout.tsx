@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     template: '%s | HAZL Solutions',
   },
   description:
-    'HAZL Solutions designs, builds, and runs revenue-ready apps for non-technical founders and small businesses — and turns fragile AI-built products into reliable, scalable businesses for growing teams.',
+    'HAZL Solutions designs, builds, and runs revenue-ready apps for non-technical founders and small businesses — and delivers DevOps consulting and implementation for enterprises through forward-deployed engineers, secondment, and managed services.',
   applicationName: 'HAZL Solutions',
   authors: [{ name: 'HAZL Solutions' }],
   creator: 'HAZL Solutions',
@@ -43,7 +43,18 @@ export const metadata: Metadata = {
   keywords: [
     'HAZL Solutions',
     'HazlCloud',
-    'AI MVP scaling',
+    'DevOps consulting',
+    'DevOps implementation',
+    'forward deployed engineers',
+    'IT staff secondment',
+    'managed DevOps services',
+    'platform engineering',
+    'AI app governance',
+    'citizen developer governance',
+    'vibe-coded apps',
+    'CI/CD',
+    'infrastructure as code',
+    'FinOps',
     'AI prototype to production',
     'DevOps for startups',
     'cloud operations',
@@ -53,9 +64,6 @@ export const metadata: Metadata = {
     'uptime',
     'app security',
     'production readiness',
-    'technical partner',
-    'fractional CTO',
-    'platform engineering',
     'AI development',
     'technical consulting',
     'software development partner',
@@ -77,14 +85,14 @@ export const metadata: Metadata = {
     siteName: 'HAZL Solutions',
     title: 'HAZL Solutions — Build or scale your app',
     description:
-      'We design, build, and run revenue-ready apps for founders, and turn fragile AI-built prototypes into reliable, scalable businesses for growing teams.',
+      'We design, build, and run revenue-ready apps for founders, and deliver DevOps consulting and implementation for enterprise IT teams — embedded, seconded, or managed.',
     // og:image is supplied per-route by opengraph-image.tsx (generated 1200×630).
   },
   twitter: {
     card: 'summary_large_image',
     title: 'HAZL Solutions — Build or scale your app',
     description:
-      'We design, build, and run revenue-ready apps for founders, and turn fragile AI-built prototypes into reliable, scalable businesses.',
+      'We design, build, and run revenue-ready apps for founders, and deliver DevOps consulting and implementation for enterprise IT teams.',
     // twitter:image falls back to the per-route og:image.
   },
   robots: {
@@ -119,7 +127,7 @@ const organizationJsonLd = {
   url: siteUrl,
   logo: `${siteUrl}/brand/hazlCloud-logo-bw2.png`,
   description:
-    'HAZL Solutions turns fragile AI-built prototypes into reliable, scalable businesses through operations, security, infrastructure, and uptime engineering.',
+    'HAZL Solutions builds and runs revenue-ready apps for founders and small businesses, and provides DevOps consulting and implementation for enterprises — cloud, CI/CD, infrastructure as code, observability, security and governance — delivered by forward-deployed engineers, secondment, or managed services.',
   sameAs: ['https://hazlcloud.com'],
 }
 

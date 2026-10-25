@@ -16,18 +16,30 @@ export function EnterpriseCta() {
           flexWrap: 'wrap',
         }}
       >
-        <h2
-          style={{
-            fontSize: 'clamp(26px,3.4vw,38px)',
-            lineHeight: 1.06,
-            letterSpacing: '-.03em',
-            fontWeight: 500,
-            margin: 0,
-            maxWidth: 620,
-          }}
-        >
-          From prototype to production-ready — without rewriting from scratch.
-        </h2>
+        <div style={{ maxWidth: 620 }}>
+          <h2
+            style={{
+              fontSize: 'clamp(26px,3.4vw,38px)',
+              lineHeight: 1.06,
+              letterSpacing: '-.03em',
+              fontWeight: 500,
+              margin: 0,
+            }}
+          >
+            Bring us the app sprawl. We&rsquo;ll bring the DevOps team.
+          </h2>
+          <p
+            style={{
+              fontSize: 15.5,
+              lineHeight: 1.55,
+              color: 'rgba(255,255,255,.58)',
+              margin: '14px 0 0',
+            }}
+          >
+            Start with a DevOps assessment: we map what your teams have built, what is risky, and
+            what it takes to run it properly.
+          </p>
+        </div>
         <a
           href={CALENDLY_URL}
           target="_blank"
@@ -35,7 +47,7 @@ export function EnterpriseCta() {
           className="pill-cta"
           style={{ flexShrink: 0 }}
         >
-          Book a discovery call
+          Book a DevOps assessment
           <ArrowRight size={17} />
         </a>
       </div>

@@ -36,20 +36,21 @@ export function Hero() {
               className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-normal text-white leading-[1.08] mb-3 md:mb-4 animate-blur-fade-up hazl-hero-text whitespace-pre-line"
               style={{ animationDelay: '300ms', letterSpacing: '-0.025em' }}
             >
-              {'Your technical partner in\nscaling AI-built products.'}
+              {'DevOps for the apps\nyour teams are building.'}
             </h1>
 
             <p
-              className="text-sm sm:text-base md:text-lg text-white/90 mb-5 md:mb-7 max-w-xl animate-blur-fade-up hazl-hero-text"
+              className="text-sm sm:text-base md:text-lg text-white/90 mb-5 md:mb-7 max-w-2xl animate-blur-fade-up hazl-hero-text"
               style={{ animationDelay: '450ms' }}
             >
-              We turn fragile prototypes into reliable, scalable businesses.
+              60 developers and DevOps engineers who embed with your team, second into your org, or
+              run it for you — taking AI-built and legacy apps from laptop to governed production.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <PrimaryButton delay={600} href="https://calendly.com/anthony-tam-hazl/30min">Turn My MVP Into a Real Product</PrimaryButton>
-              <GlassPillWithIcon icon={ChevronRight} iconRight delay={750} href="/approach">
-                Approach
+              <PrimaryButton delay={600} href="https://calendly.com/anthony-tam-hazl/30min">Book a DevOps assessment</PrimaryButton>
+              <GlassPillWithIcon icon={ChevronRight} iconRight delay={750} href="/enterprise#engagement">
+                Engagement models
               </GlassPillWithIcon>
             </div>
           </div>

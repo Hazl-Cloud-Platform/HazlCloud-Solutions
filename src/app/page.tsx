@@ -6,13 +6,13 @@ import { LogoMark } from '@/components/LogoMark'
 export const metadata: Metadata = {
   title: { absolute: 'HAZL Solutions — Build or scale your app' },
   description:
-    'HAZL Solutions designs, builds, and runs revenue-ready apps for non-technical founders and small businesses — and scales production apps for growing teams. Tell us what you’re building.',
+    'HAZL Solutions designs, builds, and runs revenue-ready apps for non-technical founders and small businesses — and delivers DevOps consulting and implementation for enterprise IT teams. Tell us what you’re building.',
   alternates: { canonical: '/' },
   openGraph: {
     url: '/',
     title: 'HAZL Solutions — Build or scale your app',
     description:
-      'We work with two kinds of teams: founders launching their first revenue-ready app, and scale-ups hardening a product for real load. Pick the one that sounds like you.',
+      'We work with two kinds of teams: founders launching their first revenue-ready app, and enterprise IT teams who need DevOps consulting and implementation for the apps their business units are building. Pick the one that sounds like you.',
   },
 }
 
@@ -245,7 +245,7 @@ export default function ChooserPage() {
                 marginTop: 20,
               }}
             >
-              Scale-up or enterprise
+              Enterprise &amp; IT teams
             </div>
             <div
               style={{
@@ -255,21 +255,23 @@ export default function ChooserPage() {
                 lineHeight: 1.5,
               }}
             >
-              I already have a product. I have &gt;300 paid users and I need it reliable, secure,
-              and ready to scale under real load.
+              Your teams are shipping AI-built apps faster than IT can run them. Our 60 DevOps and
+              software engineers embed, second, or run it for you.
             </div>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
+                rowGap: 10,
+                flexWrap: 'wrap',
                 marginTop: 22,
                 paddingTop: 18,
                 borderTop: '1px solid rgba(255,255,255,.1)',
               }}
             >
               <span style={{ fontSize: 13.5, fontWeight: 600, color: 'rgba(255,255,255,.55)' }}>
-                Our current approach
+                FDE · Secondment · Managed
               </span>
               <span style={{ flex: 1 }} />
               <span
@@ -281,7 +283,7 @@ export default function ChooserPage() {
                   fontWeight: 600,
                 }}
               >
-                View our work
+                Explore DevOps services
                 <ArrowRight size={17} strokeWidth={2.2} />
               </span>
             </div>

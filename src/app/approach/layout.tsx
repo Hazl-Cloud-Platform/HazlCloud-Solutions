@@ -3,48 +3,49 @@ import type { Metadata } from 'next'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hazlsolutions.com'
 
 export const metadata: Metadata = {
-  title: 'Our Approach - From MVP to Production-Ready',
+  title: 'Our Approach - Assess, Implement, Operate',
+  // Kept under 160 characters so search results and link previews show it whole.
   description:
-    'Our 3-step approach to turning AI-built MVPs into reliable, scalable products: Assess weak points, Stabilize the system, and Scale for real users. We specialize in the operations side - cloud, infrastructure, observability, security, and uptime.',
+    'Our three-step approach: assess what your teams have built, implement sandboxes, CI/CD, IaC and guardrails, then operate it day to day.',
   alternates: { canonical: '/approach' },
   openGraph: {
     type: 'article',
     url: '/approach',
-    title: 'Our Approach - From MVP to Production-Ready | HAZL Solutions',
+    title: 'Our Approach - Assess, Implement, Operate | HAZL Solutions',
     description:
-      'Dev is solved. Ops is where products fail. See how HAZL Solutions assesses, stabilizes, and scales AI-built products for real users.',
+      'Dev is solved. Ops is where products fail. See how HAZL Solutions assesses, implements and operates the AI-built and legacy apps your teams depend on.',
   },
   twitter: {
-    title: 'Our Approach - From MVP to Production-Ready | HAZL Solutions',
+    title: 'Our Approach - Assess, Implement, Operate | HAZL Solutions',
     description:
-      'Dev is solved. Ops is where products fail. See how HAZL Solutions assesses, stabilizes, and scales AI-built products.',
+      'Dev is solved. Ops is where products fail. See how HAZL Solutions assesses, implements and operates the apps your teams build.',
   },
 }
 
 const howToJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
-  name: 'From MVP to Production-Ready',
+  name: 'From laptop apps to a governed platform',
   description:
-    'How HAZL Solutions turns fragile AI-built MVPs into reliable, scalable products through a three-step approach.',
+    'How HAZL Solutions takes the AI-built and legacy apps enterprise teams build from laptop to governed production, through a three-step approach.',
   step: [
     {
       '@type': 'HowToStep',
       position: 1,
       name: 'Assess',
-      text: 'Full review of your current system. Map every risk and weak point. Plain-language report - no jargon.',
+      text: 'Inventory every app, pipeline and data connection. Map risk, cost and ownership. Plain-language roadmap - no jargon.',
     },
     {
       '@type': 'HowToStep',
       position: 2,
-      name: 'Stabilize',
-      text: 'Fix the crashes and instability. Add monitoring, alerts, and backups. Close the security gaps.',
+      name: 'Implement',
+      text: 'Sandboxes, CI/CD and infrastructure as code. SSO, guardrails and alerts. Budgets and usage telemetry.',
     },
     {
       '@type': 'HowToStep',
       position: 3,
-      name: 'Scale',
-      text: 'Performance under real load. Reliable, observable infrastructure. Headroom for the next 10x.',
+      name: 'Operate',
+      text: 'Monitoring, on-call and backups. Patching and cost tuning. Hand-over or managed services.',
     },
   ],
 }

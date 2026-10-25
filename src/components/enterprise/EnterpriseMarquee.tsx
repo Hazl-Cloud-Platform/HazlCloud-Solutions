@@ -1,0 +1,122 @@
+'use client'
+
+import { useState } from 'react'
+import type { Partner } from '@/components/startup/data'
+
+// Enterprise-only logo list. Kept here rather than in startup/data.ts so the
+// /startup marquee is untouched.
+const PARTNERS: Partner[] = [
+  { name: 'Pembina', src: '/brand/partners/pembina.svg' },
+  { name: 'VAFFC — Vancouver Airport Fuel Facilities Corporation', src: '/brand/partners/vaffc.svg' },
+  { name: 'ATCO', src: '/brand/partners/atco.svg', scale: 0.88 },
+  { name: 'Inter Pipeline', src: '/brand/partners/inter-pipeline.svg' },
+  { name: 'S.i. Systems', src: '/brand/partners/si-systems.png' },
+  { name: 'BMO', src: '/brand/partners/bmo.png' },
+  { name: 'NAIT', src: '/brand/partners/nait.webp' },
+  { name: 'SAIT', src: '/brand/partners/sait.png' },
+]
+
+type Status = 'loading' | 'ok' | 'fail'
+
+/**
+ * /enterprise copy of the startup PartnerMarquee with its own logo list.
+ * Infinite logo marquee. Tiles fade in once their image loads and hide
+ * themselves if the image is missing; if every logo fails (e.g. assets not yet
+ * added to /public/brand/partners/), the whole strip removes itself.
+ */
+export function EnterpriseMarquee() {
+  const [status, setStatus] = useState<Record<number, Status>>({})
+
+  const allFailed = PARTNERS.every((_, i) => status[i] === 'fail')
+  if (allFailed) return null
+
+  const tile = (p: Partner, i: number, ariaHidden = false) => {
+    const s = status[i]
+    return (
+      <span
+        key={`${ariaHidden ? 'b' : 'a'}-${i}`}
+        style={{
+          display: s === 'fail' ? 'none' : 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 80,
+          padding: '0 26px',
+          background: '#fff',
+          borderRadius: 14,
+          boxShadow: '0 3px 14px rgba(0,0,0,.3)',
+          flexShrink: 0,
+          // Show by default; only hide tiles whose image actually fails. (Fading
+          // in on `onLoad` broke for cached images, whose load fires before React
+          // attaches the handler — leaving every logo stuck invisible.)
+          opacity: s === 'fail' ? 0 : 1,
+          transition: 'opacity .35s ease',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={p.src}
+          alt={ariaHidden ? '' : p.name}
+          aria-hidden={ariaHidden || undefined}
+          ref={(el) => {
+            // Catch images already complete (cached) before onLoad can fire.
+            if (el?.complete) {
+              setStatus((prev) =>
+                prev[i] ? prev : { ...prev, [i]: el.naturalWidth > 0 ? 'ok' : 'fail' }
+              )
+            }
+          }}
+          onLoad={() => setStatus((prev) => ({ ...prev, [i]: 'ok' }))}
+          onError={() => setStatus((prev) => ({ ...prev, [i]: 'fail' }))}
+          style={{
+            // `scale` dials an individual logo back when its artwork is tight
+            // enough to otherwise dominate the strip (see PARTNERS).
+            maxHeight: 56 * (p.scale ?? 1),
+            maxWidth: 220 * (p.scale ?? 1),
+            width: 'auto',
+            objectFit: 'contain',
+            display: 'block',
+          }}
+        />
+      </span>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '.16em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,.36)',
+          marginBottom: 14,
+        }}
+      >
+        Trusted alongside
+      </div>
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          WebkitMaskImage:
+            'linear-gradient(90deg, transparent 0, #000 3%, #000 95%, transparent 100%)',
+          maskImage:
+            'linear-gradient(90deg, transparent 0, #000 3%, #000 95%, transparent 100%)',
+        }}
+      >
+        <div className="hz-marquee-track">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingRight: 20 }}>
+            {PARTNERS.map((p, i) => tile(p, i))}
+          </div>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: 20, paddingRight: 20 }}
+            aria-hidden="true"
+          >
+            {PARTNERS.map((p, i) => tile(p, i, true))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

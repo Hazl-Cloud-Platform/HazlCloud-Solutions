@@ -2,10 +2,14 @@
 
 import Link from 'next/link'
 
+// Hash targets are absolute (/enterprise#…) so they resolve from any page that
+// renders the shared Navbar.
 const NAV_LINKS = [
-  { label: 'Approach', href: '/approach' },
-  { label: 'Insights', href: '/insights' },
-  { label: 'Contact',  href: '/approach#contact' },
+  { label: 'Services',          href: '/enterprise#services' },
+  { label: 'Engagement models', href: '/enterprise#engagement' },
+  { label: 'Approach',          href: '/approach' },
+  { label: 'Insights',          href: '/insights' },
+  { label: 'Contact',           href: '/approach#contact' },
 ]
 
 export function MobileMenu({ open }: { open: boolean }) {

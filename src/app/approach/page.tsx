@@ -67,9 +67,9 @@ export default function ApproachPage() {
         {/* 1. Opening */}
         <section className="approach-section opening reveal">
           <h1 className="approach-h1">
-            Most teams build.
+            Your teams build.
             <br />
-            <span className="muted">Few know how to run.</span>
+            <span className="muted">We make it run.</span>
           </h1>
         </section>
 
@@ -78,11 +78,11 @@ export default function ApproachPage() {
           <div className="eyebrow">About us</div>
           <div className="about-grid">
             <div className="about-copy">
-              <h2 className="approach-h2">We build software with an operator&apos;s mindset.</h2>
+              <h2 className="approach-h2">DevOps engineers with an operator&apos;s mindset.</h2>
               <p className="lead about-lead">
-                We help teams deliver software. Our specialty is the operations side of the business: cloud,
-                infrastructure, observability, uptime, recovery, and the day-to-day systems work that keeps production
-                stable.
+                We are a bench of 60 developers and DevOps engineers based in Calgary, Canada. Our specialty is the
+                operations side: cloud, CI/CD, infrastructure as code, observability, security and governance - the
+                day-to-day systems work that keeps the apps your teams build running in production.
               </p>
             </div>
 
@@ -101,13 +101,6 @@ export default function ApproachPage() {
                 Our <strong>proprietary</strong> platform helps technical professionals manage infrastructure, reduce operational blind spots, and
                 make sure the solutions they support continue to operate as expected.
               </p>
-              <div className="about-cta-row">
-                <span className="about-cta-prompt">If you are a technical professional:</span>
-                <a href="https://hazlcloud.com" target="_blank" rel="noreferrer" className="about-link">
-                  Explore HAZL Cloud
-                  <ArrowRight size={16} />
-                </a>
-              </div>
             </div>
           </div>
         </section>
@@ -119,19 +112,19 @@ export default function ApproachPage() {
           <p className="lead">
             <strong>Dev</strong> (development) is building the product - writing the code, shipping features, getting the demo working.
             <br />
-            <strong>Ops</strong> (operations) is everything that keeps it alive once real users arrive - uptime, security, backups, performance, recovery when things go wrong.
+            <strong>Ops</strong> (operations) is everything that keeps it alive once the business depends on it - uptime, security, backups, performance, recovery when things go wrong.
           </p>
 
           <div className="gap-grid">
             <div className="gap-col dev">
               <span className="gap-label">Dev (build) - easy now</span>
-              <span className="gap-title">AI builds the MVP/prototype</span>
+              <span className="gap-title">AI builds the app</span>
               <ul>
                 {[
-                  'MVP shipped in days',
-                  'Features work in the demo',
-                  'Quick launch',
-                  "Looks great on the founder's laptop",
+                  'Built in an afternoon',
+                  'Works in the demo',
+                  'Shared with the team',
+                  'Runs on a laptop',
                 ].map((item) => (
                   <li key={item}>
                     <span className="gap-dot good"><CheckIcon /></span>
@@ -143,14 +136,14 @@ export default function ApproachPage() {
             <div className="gap-divider" />
             <div className="gap-col ops">
               <span className="gap-label">Ops (run) - overlooked</span>
-              <span className="gap-title">…then real users show up</span>
+              <span className="gap-title">…then the whole department depends on it</span>
               <ul>
                 {[
-                  "No monitoring - you'll find out from an angry user",
-                  'No backups - one bad query and data is gone',
-                  'Security gaps - keys in the open, database exposed',
-                  'Slow performance under real load',
-                  'Crashes when traffic spikes',
+                  'No owner when it breaks',
+                  'Agents with production database access',
+                  'No backups or version control',
+                  'Token and cloud spend nobody tracks',
+                  'IT finds out last',
                 ].map((item) => (
                   <li key={item}>
                     <span className="gap-dot bad"><XIcon /></span>
@@ -163,14 +156,14 @@ export default function ApproachPage() {
 
           <div className="gap-stamp">
             <span className="pulse" />
-            This is where most products fail.
+            This is where most apps fail.
           </div>
         </section>
 
         {/* 4. Approach steps */}
         <section className="approach-section reveal">
           <div className="eyebrow">How we work</div>
-          <h2 className="approach-h2" style={{ maxWidth: 'none', textWrap: 'nowrap' }}>
+          <h2 className="approach-h2 approach-h2-nowrap" style={{ maxWidth: 'none' }}>
             We focus on the part
             <br />
             most teams ignore: Operations.
@@ -180,29 +173,29 @@ export default function ApproachPage() {
             {[
               {
                 num: 'Step 01 - Assess',
-                title: "Understand what you've built",
+                title: "Understand what your teams have built",
                 items: [
-                  'Full review of your current system',
-                  'Map every risk and weak point',
-                  'Plain-language report - no jargon',
+                  'Inventory every app, pipeline and data connection',
+                  'Map risk, cost and ownership',
+                  'Plain-language roadmap - no jargon',
                 ],
               },
               {
-                num: 'Step 02 - Stabilize',
-                title: 'Stop the bleeding',
+                num: 'Step 02 - Implement',
+                title: 'Put a real platform underneath',
                 items: [
-                  'Fix the crashes and instability',
-                  'Add monitoring, alerts, and backups',
-                  'Close the security gaps',
+                  'Sandboxes, CI/CD and infrastructure as code',
+                  'SSO, guardrails and alerts',
+                  'Budgets and usage telemetry',
                 ],
               },
               {
-                num: 'Step 03 - Scale',
-                title: 'Ready it for growth',
+                num: 'Step 03 - Operate',
+                title: 'Keep it running day to day',
                 items: [
-                  'Performance under real load',
-                  'Reliable, observable infrastructure',
-                  'Headroom for the next 10x',
+                  'Monitoring, on-call and backups',
+                  'Patching and cost tuning',
+                  'Hand-over or managed services',
                 ],
               },
             ].map((step, i, arr) => (
@@ -227,15 +220,15 @@ export default function ApproachPage() {
         {/* 5. Capability cards */}
         <section className="approach-section reveal">
           <div className="eyebrow">What we actually do</div>
-          <h2 className="approach-h2">Five things that keep your product alive.</h2>
+          <h2 className="approach-h2">Five things that keep your apps alive.</h2>
 
           <div className="caps">
             {[
-              { title: 'Reliability',      desc: "Your system stays up - and you're the first to know if anything wobbles.", icon: <ReliabilityIcon /> },
-              { title: 'Security',         desc: 'Keys locked down, data protected, users safe - not an afterthought.',      icon: <SecurityIcon /> },
-              { title: 'Performance',      desc: 'Pages load fast. Actions feel instant. Users actually stick around.',        icon: <PerformanceIcon /> },
-              { title: 'Scalability',      desc: 'Handle 10 users or 100,000 - without rewriting from scratch.',              icon: <ScalabilityIcon /> },
-              { title: 'Ongoing Support',  desc: 'We stay on the line. As you grow, we keep your foundation solid.',          icon: <SupportIcon /> },
+              { title: 'CI/CD',                 desc: 'Pipelines, environments, approvals and rollbacks so changes ship safely.',          icon: <PipelineIcon /> },
+              { title: 'Infrastructure as code', desc: 'Azure, AWS and on-prem/VDI, reproducible with Terraform and Bicep.',               icon: <ServerIcon /> },
+              { title: 'Observability',          desc: 'Monitoring, logging, alerting and backups - so you know before your users do.',    icon: <ReliabilityIcon /> },
+              { title: 'Security & governance',  desc: 'SSO, secrets management, policy guardrails, data-access controls and audit trails.', icon: <SecurityIcon /> },
+              { title: 'FinOps & AI cost',       desc: 'Per-team token and cloud budgets, usage telemetry and alerts you can act on.',     icon: <ScalabilityIcon /> },
             ].map(({ title, desc, icon }) => (
               <div key={title} className="cap">
                 <div className="cap-ic">{icon}</div>
@@ -249,14 +242,15 @@ export default function ApproachPage() {
         {/* 6. Team */}
         <section className="approach-section reveal">
           <div className="eyebrow">Who you&apos;re working with</div>
-          <h2 className="approach-h2">Built by operators, not just developers.</h2>
+          <h2 className="approach-h2">60 engineers. Dev and Ops under one roof.</h2>
 
           <div className="team-wrap">
             <div className="team-roles">
               {[
-                { icon: <CodeIcon />,  name: 'Software Developers', desc: 'Ship the features that move the business forward.' },
-                { icon: <CloudIcon />, name: 'Cloud Architects',     desc: "Design systems that don't fall over when traffic doubles." },
-                { icon: <ChartIcon />, name: 'Business Analysts',    desc: 'Translate technical decisions into business outcomes.' },
+                { icon: <ServerIcon size={16} />, name: 'DevOps & Platform Engineers', desc: 'Build the pipelines, sandboxes and golden paths your teams ship through.' },
+                { icon: <CodeIcon />,            name: 'Software Developers',          desc: 'Take AI-built and legacy apps from a prototype to maintainable code.' },
+                { icon: <ChartIcon />,           name: 'Site Reliability Engineers',   desc: 'Monitoring, alerting, on-call and recovery when something goes wrong.' },
+                { icon: <CloudIcon />,           name: 'Cloud Architects',             desc: 'Landing zones, networking and hosting that IT and security can sign off on.' },
               ].map(({ icon, name, desc }) => (
                 <div key={name} className="role">
                   <div className="role-left">
@@ -272,22 +266,22 @@ export default function ApproachPage() {
 
             <p className="pull-quote">
               We do not just build features.{' '}
-              <span className="pull-muted">We make sure your product works in the real world.</span>
+              <span className="pull-muted">We make sure the apps your teams depend on keep running.</span>
             </p>
           </div>
         </section>
 
         {/* 7. Partnership */}
         <section className="approach-section reveal">
-          <div className="eyebrow">After launch</div>
-          <h2 className="approach-h2">We stay with you.</h2>
+          <div className="eyebrow">How we engage</div>
+          <h2 className="approach-h2">Embedded, seconded, or managed.</h2>
 
           <ul className="partner-list">
             {[
-              'Ongoing support and maintenance',
-              'Continuous improvements',
-              'Technical guidance as you grow',
-              'Long-term technical partner - not a vendor',
+              'Forward-deployed engineers inside your business unit',
+              'Secondment into your team, under your direction',
+              'Managed services that keep it running',
+              'Mix and change models as you grow',
             ].map((item) => (
               <li key={item}>
                 <span className="check-icon"><SmallCheckIcon /></span>
@@ -299,32 +293,32 @@ export default function ApproachPage() {
 
         {/* 8. Flow diagram */}
         <section className="approach-section reveal">
-          <div className="eyebrow">From start to scale</div>
-          <h2 className="approach-h2">From prototype to production-ready.</h2>
+          <div className="eyebrow">From sprawl to platform</div>
+          <h2 className="approach-h2">From laptop apps to a governed platform.</h2>
 
           <div className="flow-wrap">
             <div className="flow-track">
               <div className="flow-node input-node">
                 <span className="flow-lbl">Day 1</span>
-                <span className="flow-name">AI prototype</span>
+                <span className="flow-name">AI-built app</span>
               </div>
               <div className="flow-arrow"><ArrowRightSmIcon /></div>
               <div className="flow-node broken-node">
                 <span className="flow-lbl">Day 30</span>
-                <span className="flow-name">Fragile system</span>
+                <span className="flow-name">App sprawl</span>
               </div>
               <div className="flow-arrow"><ArrowRightSmIcon /></div>
               <div className="flow-node hazl-node">
                 <LogoMark className="flow-logo" />
-                <span className="flow-name">HAZL works with you on development & operations</span>
+                <span className="flow-name">HAZL embeds, implements and operates</span>
               </div>
               <div className="flow-arrow"><ArrowRightSmIcon /></div>
               <div className="flow-node output-node">
                 <span className="flow-lbl">Day 90+</span>
-                <span className="flow-name">Stable &amp; scalable</span>
+                <span className="flow-name">Governed &amp; running</span>
               </div>
             </div>
-            <div className="flow-caption">No rewrite. No starting over. Same product, real foundation.</div>
+            <div className="flow-caption">No rewrite. No shutdown. Same apps, a real platform underneath.</div>
           </div>
         </section>
 
@@ -332,13 +326,13 @@ export default function ApproachPage() {
         <div className="end-cta reveal" id="contact">
           <div className="end-cta-headline">Contact us! Ready when you are.</div>
           <h2 className="approach-h2" style={{ maxWidth: 'none', textAlign: 'left', fontSize: 'clamp(28px, 3.6vw, 42px)' }}>
-            Let&apos;s make your product survive its first real users.
+            Let&apos;s make your teams&apos; apps safe to depend on.
           </h2>
           <p>
-            Send us what you&apos;ve built. We&apos;ll tell you exactly what&apos;s going to break first - and what it takes to fix it.
+            Tell us what your teams have built. We&apos;ll tell you what&apos;s risky, what it costs, and how to run it properly.
           </p>
           <a className="pill-cta" href="https://calendly.com/anthony-tam-hazl/30min" target="_blank" rel="noreferrer">
-            Turn My MVP Into a Real Product
+            Book a DevOps assessment
             <ArrowRight size={16} />
           </a>
           <p style={{ marginTop: 16 }}>
@@ -354,7 +348,7 @@ export default function ApproachPage() {
 
       <footer className="approach-footer">
         <span>© 2026 HAZL Solutions</span>
-        <span>Your long-term technical partner</span>
+        <span>DevOps consulting &amp; implementation</span>
       </footer>
     </>
   )
@@ -403,10 +397,19 @@ function SecurityIcon() {
     </svg>
   )
 }
-function PerformanceIcon() {
+function PipelineIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      <circle cx="6" cy="5" r="2" /><circle cx="6" cy="19" r="2" /><circle cx="18" cy="12" r="2" />
+      <path d="M6 7v10" /><path d="M8 5h4a4 4 0 0 1 4 4v1" /><path d="M8 19h4a4 4 0 0 0 4-4v-1" />
+    </svg>
+  )
+}
+function ServerIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="7" rx="2" /><rect x="3" y="14" width="18" height="7" rx="2" />
+      <line x1="7" y1="6.5" x2="7.01" y2="6.5" /><line x1="7" y1="17.5" x2="7.01" y2="17.5" />
     </svg>
   )
 }
@@ -414,13 +417,6 @@ function ScalabilityIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="3 17 9 11 13 15 21 7" /><polyline points="14 7 21 7 21 14" />
-    </svg>
-  )
-}
-function SupportIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   )
 }

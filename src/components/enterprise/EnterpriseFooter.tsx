@@ -29,7 +29,7 @@ export function EnterpriseFooter() {
         <a href="/startup" style={{ color: 'rgba(255,255,255,.5)', textDecoration: 'none' }}>
           Affordable software development for startups →
         </a>
-        <span>© HAZL Solutions · Built by operators, not just developers.</span>
+        <span>© HAZL Solutions · DevOps consulting &amp; implementation.</span>
       </div>
     </footer>
   )

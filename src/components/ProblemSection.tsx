@@ -1,25 +1,25 @@
-import { AlertTriangle, ShieldOff, Gauge, Wrench, ArrowRight } from 'lucide-react'
+import { Boxes, ShieldOff, Laptop, Wallet, ArrowRight } from 'lucide-react'
 
 const PROBLEMS = [
   {
-    icon: AlertTriangle,
-    title: 'Your app crashes when users actually show up',
-    body: 'AI tools build something that works for one person. Real traffic, real edge cases, real concurrent users - that is a different problem. Most MVPs go down within their first 30 days of real use.',
+    icon: Boxes,
+    title: 'App sprawl nobody owns',
+    body: 'Dozens of one-off AI-built apps and dashboards; no inventory, no owner, no version control.',
   },
   {
     icon: ShieldOff,
-    title: 'It is not secure, and you would not know if it were hacked',
-    body: 'Default AI scaffolding ships with the API keys exposed, the database open, and no logging. The first sign of trouble is usually an angry email from a user - or a stranger in your data.',
+    title: 'AI agents with keys to production',
+    body: 'Coding agents pointed at real databases without a sandbox, guardrails or alerts.',
   },
   {
-    icon: Gauge,
-    title: 'It slows to a crawl as you grow',
-    body: 'Queries that work for 10 rows do not work for 10,000. Pages that load in a second on your laptop take 12 seconds in production. Your users leave before they ever see the value.',
+    icon: Laptop,
+    title: "Hosted on someone's laptop",
+    body: 'The app everyone relies on goes down when its builder goes on vacation.',
   },
   {
-    icon: Wrench,
-    title: 'Nobody can fix it but the AI that built it',
-    body: 'When something breaks at 2am, you cannot ask Claude to ship a hotfix to production. You need a human partner who has read the code, knows the system, and can intervene.',
+    icon: Wallet,
+    title: 'Spend nobody can see',
+    body: 'Token and cloud costs spread across teams with no budgets, telemetry or ROI.',
   },
 ]
 
@@ -35,9 +35,9 @@ export function ProblemSection() {
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.05] text-white"
             style={{ letterSpacing: '-0.035em' }}
           >
-            AI makes building easy.
+            Your teams can build an app in an afternoon.
             <br />
-            <span className="text-gray-500">Running software is hard.</span>
+            <span className="text-gray-500">Someone still has to run it.</span>
           </h2>
         </div>
 
@@ -63,7 +63,7 @@ export function ProblemSection() {
             className="text-xl md:text-2xl text-white max-w-2xl leading-snug"
             style={{ letterSpacing: '-0.02em' }}
           >
-            We turn fragile prototypes into reliable, scalable businesses - without rewriting from scratch.
+            We give IT a safe, governed way to say yes — without slowing the business down.
           </p>
           <a
             href="/approach"

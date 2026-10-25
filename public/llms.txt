@@ -1,21 +1,28 @@
 # HAZL Solutions
 
-> HAZL Solutions is a Canadian company offering affordable, done-for-you software development. We design, build, secure, and run a real, revenue-ready app for non-technical founders and small businesses — or fix and productionize an AI-built ("vibe-coded") prototype that isn't market-ready — from $80/month CAD, live in about two weeks, with no upfront cost. For scale-ups and enterprises, we harden and scale existing products for real load. Everything runs on HAZL Cloud, our managed platform, and is hosted in Canada; you own your app and your data.
+> HAZL Solutions is a Canadian company based in Calgary, Alberta. For non-technical founders and small businesses we offer affordable, done-for-you software development: we design, build, secure, and run a real, revenue-ready app — or fix and productionize an AI-built ("vibe-coded") prototype that isn't market-ready — from $80/month CAD, live in about two weeks, with no upfront cost, on HAZL Cloud, our managed platform, hosted in Canada. For enterprises and IT teams we provide DevOps consulting and implementation: a bench of 60 developers and DevOps engineers who embed with a business unit as forward-deployed engineers, second into your team under your direction, or run it for you as a managed service — taking AI-built and legacy apps from laptop to governed production.
 
 ## What we do
 - Build a real, revenue-ready app from your idea — design, payments, logins, customer accounts, your data, backups, and security, wired up and tested.
 - Fix, secure, and scale AI-generated / "vibe-coded" apps that look done but break with real customers — usually faster than starting over.
 - Run and maintain everything day-to-day on HAZL Cloud: hosting & uptime, security & daily backups, updates & fixes, automatic scaling, and a real human on call.
-- For growing teams: reliability, security, performance, scalability, and ongoing operations for a product that already has real users.
+- For enterprises and IT teams, DevOps consulting and implementation, end to end:
+  - CI/CD & release engineering: pipelines, environments, approvals and rollbacks so changes ship safely.
+  - Infrastructure as code & cloud: Azure, AWS and on-prem/VDI, reproducible with Terraform/Bicep; landing zones and networking.
+  - Platform engineering & AI sandboxes: sandbox-per-project environments, golden paths and an internal app gallery so citizen developers build safely.
+  - Observability & SRE: monitoring, logging, alerting, backups, incident response and uptime you can measure.
+  - DevSecOps & governance: SSO, secrets management, policy guardrails, data-access controls and audit trails.
+  - FinOps & AI cost control: per-team token and cloud budgets, usage telemetry and alerts, so you can see ROI per app.
+- Three ways to engage on the enterprise side: forward-deployed engineers (our engineers sit with your business unit), secondment (our engineers join your team, under your direction), and managed services (we run it: monitoring, patching, backups, on-call, cost reporting). We usually recommend starting with a DevOps assessment, then mixing models. Canadian hosting is available via HAZL Cloud.
 
-## Pricing
+## Pricing (startup offer)
 - From $80/month CAD, all-in. No build fee, no setup fee, nothing upfront.
 - Typically live in ~2 weeks for a focused first version, then improved weekly.
 - Cancel anytime. You own your app and your data.
 
 ## Who we serve
 - Non-technical founders and small businesses launching their first revenue-ready app: https://hazlsolutions.com/startup
-- Scale-ups and enterprises (e.g. 300+ paid users) hardening a product to be reliable, secure, and ready to scale: https://hazlsolutions.com/enterprise
+- Enterprises and IT teams whose business units are shipping AI-built internal apps that someone still has to host, secure, govern and operate: https://hazlsolutions.com/enterprise
 
 ## What sets us apart
 - Operators, not just developers: our specialty is the "run it" side — cloud, infrastructure, observability, uptime, recovery, and the day-to-day systems work that keeps production stable. Our thesis: "Dev is solved. Ops is where products fail."
@@ -26,8 +33,8 @@
 
 ## Key pages
 - [Startup — affordable software development, an app from $80/mo](https://hazlsolutions.com/startup)
-- [Enterprise — make an existing product reliable and ready to scale](https://hazlsolutions.com/enterprise)
-- [Approach — building with an operator's mindset](https://hazlsolutions.com/approach)
+- [Enterprise — DevOps consulting & implementation: FDE, secondment, managed services](https://hazlsolutions.com/enterprise)
+- [Approach — how we assess, implement and operate](https://hazlsolutions.com/approach)
 - [Insights — articles on shipping and running software](https://hazlsolutions.com/insights)
 
 ## Contact

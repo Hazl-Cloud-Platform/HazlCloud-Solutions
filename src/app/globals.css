@@ -269,6 +269,11 @@ html, body {
   letter-spacing: -0.035em;
   max-width: 18ch;
 }
+/* Keeps the hand-set line breaks on their own lines, but only where there is
+   room: below 961px nowrap overflows the viewport (375px especially). */
+@media (min-width: 961px) {
+  .approach-h2-nowrap { text-wrap: nowrap; }
+}
 .approach-h3 {
   margin: 0;
   font-weight: 500;
