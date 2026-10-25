@@ -43,8 +43,9 @@ export function Hero() {
               className="text-sm sm:text-base md:text-lg text-white/90 mb-5 md:mb-7 max-w-2xl animate-blur-fade-up hazl-hero-text"
               style={{ animationDelay: '450ms' }}
             >
-              60 developers and DevOps engineers who embed with your team, second into your org, or
-              run it for you — taking AI-built and legacy apps from laptop to governed production.
+              We have 60+ developers and DevOps engineers who embed with your team, second into your
+              org, or run it for you — taking AI-built and legacy apps from laptops to governed
+              productions.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
