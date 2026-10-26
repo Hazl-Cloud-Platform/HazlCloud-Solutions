@@ -97,6 +97,11 @@ export const metadata: Metadata = {
       'We design, build, and run revenue-ready apps for founders, and deliver DevOps consulting and implementation for enterprise IT teams.',
     // twitter:image falls back to the per-route og:image.
   },
+  // Google Search Console ownership (anthony.tam@hazl.ca, URL-prefix property
+  // https://www.hazlsolutions.com/). Public by design; removing it un-verifies.
+  verification: {
+    google: '-hjDLO9fpu2c2_T9ajnkepjSr7awlEFqfB-4dMhZTII',
+  },
   robots: {
     index: true,
     follow: true,
