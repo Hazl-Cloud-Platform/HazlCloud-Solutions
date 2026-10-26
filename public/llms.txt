@@ -1,6 +1,6 @@
 # HAZL Solutions
 
-> HAZL Solutions is a Canadian company based in Calgary, Alberta. For non-technical founders and small businesses we offer affordable, done-for-you software development: we design, build, secure, and run a real, revenue-ready app — or fix and productionize an AI-built ("vibe-coded") prototype that isn't market-ready — from $80/month CAD, live in about two weeks, with no upfront cost, on HAZL Cloud, our managed platform, hosted in Canada. For enterprises and IT teams we provide DevOps consulting and implementation: a bench of 60+ developers and DevOps engineers who embed with a business unit as forward-deployed engineers, second into your team under your direction, or run it for you as a managed service — taking AI-built and legacy apps from laptop to governed production.
+> HAZL Solutions is a Canadian company based in Calgary, Alberta. For non-technical founders and small businesses we offer affordable, done-for-you software development: we design, build, secure, and run a real, revenue-ready app — or fix and productionize an AI-built ("vibe-coded") prototype that isn't market-ready — from $80/month CAD, live in about two weeks, with no upfront cost, on HAZL Cloud, our managed platform, hosted in Canada. For enterprises and IT teams we provide DevOps consulting and implementation — "your gateway from laptop to production": a bench of 60+ developers and DevOps engineers who embed with a business unit as forward-deployed engineers, second into your team under your direction, or run it for you as a managed service — taking AI-built and legacy apps from laptop to governed production.
 
 ## What we do
 - Build a real, revenue-ready app from your idea — design, payments, logins, customer accounts, your data, backups, and security, wired up and tested.
@@ -33,7 +33,7 @@
 
 ## Key pages
 - [Startup — affordable software development, an app from $80/mo](https://hazlsolutions.com/startup)
-- [Enterprise — DevOps consulting & implementation: FDE, secondment, managed services](https://hazlsolutions.com/enterprise)
+- [Enterprise — DevOps consulting & implementation, your gateway from laptop to production: FDE, secondment, managed services](https://hazlsolutions.com/enterprise)
 - [Approach — how we assess, implement and operate](https://hazlsolutions.com/approach)
 - [Insights — articles on shipping and running software](https://hazlsolutions.com/insights)
 

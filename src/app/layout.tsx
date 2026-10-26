@@ -45,6 +45,8 @@ export const metadata: Metadata = {
     'HazlCloud',
     'DevOps consulting',
     'DevOps implementation',
+    'DevOps gateway',
+    'laptop to production',
     'forward deployed engineers',
     'IT staff secondment',
     'managed DevOps services',

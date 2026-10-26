@@ -34,7 +34,7 @@ names, case-study metrics, certifications, SLA numbers, response times, prices o
 
 1. **Audience bar** — label `Enterprise DevOps` (was "Scale-up / enterprise").
 2. **Hero** (video kept)
-   - H1: `DevOps for the apps\nyour teams are building.`
+   - H1: `Your gateway from\nlaptop to production.` (ties to the gate in the hero video; was `DevOps for the apps your teams are building.`)
    - Sub: `60 developers and DevOps engineers who embed with your team, second into your org,
      or run it for you — taking AI-built and legacy apps from laptop to governed production.`
    - CTA primary: `Book a DevOps assessment` → Calendly. Secondary glass pill: `Engagement models` → `#engagement`.

@@ -36,7 +36,7 @@ export function Hero() {
               className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-normal text-white leading-[1.08] mb-3 md:mb-4 animate-blur-fade-up hazl-hero-text whitespace-pre-line"
               style={{ animationDelay: '300ms', letterSpacing: '-0.025em' }}
             >
-              {'DevOps for the apps\nyour teams are building.'}
+              {'Your gateway from\nlaptop to production.'}
             </h1>
 
             <p
