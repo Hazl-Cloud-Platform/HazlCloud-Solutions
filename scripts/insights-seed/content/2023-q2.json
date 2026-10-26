@@ -1,0 +1,62 @@
+{
+  "quarter": "2023-Q2",
+  "publishedAt": "2023-05-17T15:00:00.000Z",
+  "title": "Before You Paste Production Logs into ChatGPT",
+  "slug": "before-you-paste-production-logs-into-chatgpt",
+  "excerpt": "Data leaving the building is the first operational risk of generative AI. Treat your AI usage policy as a control, and redact sensitive data before it ever reaches a log.",
+  "seoTitle": "Pasting Production Logs into ChatGPT",
+  "seoDescription": "Pasting logs into AI chat tools can leak customer data and secrets. Treat AI usage policy as an operational control, approve tools and redact at the source.",
+  "tags": ["AI", "Security", "Observability", "Governance"],
+  "body": [
+    { "style": "normal", "text": "It's 2 a.m., a service is throwing stack traces, and the on-call engineer has a chat window open. Paste the logs, ask what's wrong, get a plausible answer in seconds. It works well enough that it's quickly becoming a reflex." },
+    { "style": "normal", "text": "It's also one of the fastest ways for production data to leave your organization without anyone noticing. Logs carry customer email addresses, IP addresses, session tokens, internal hostnames and, more often than anyone admits, credentials. Once pasted into a third-party service, that data sits outside your retention policy, your access controls and your incident scope." },
+    { "style": "normal", "text": "This spring made the risk concrete. Before worrying about model accuracy, most teams have a simpler operational problem to solve: knowing what data is going where." },
+
+    { "style": "h2", "text": "Three warnings in three months" },
+    { "style": "normal", "text": "On May 2, [Bloomberg reported](https://www.bloomberg.com/news/articles/2023-05-02/samsung-bans-chatgpt-and-other-generative-ai-use-by-staff-after-leak) that Samsung was banning staff use of generative AI tools like ChatGPT after discovering employees had uploaded sensitive code. The concern, according to the company's memo, was that data sent to these platforms is stored on external servers, making it difficult to retrieve and delete." },
+    { "style": "normal", "text": "In March, OpenAI published a [post-mortem](https://openai.com/blog/march-20-chatgpt-outage) on a March 20 incident in which a bug in the open-source redis-py client library let some users see titles from other users' chat history. The same bug may have made payment-related information visible for 1.2% of ChatGPT Plus subscribers who were active during a specific nine-hour window. Whatever your view of the vendor, the lesson is general: anything you send to a hosted service is exposed to that service's bugs." },
+    { "style": "normal", "text": "On March 31, Italy's data protection authority [announced a temporary limitation](https://www.gpdp.it/web/guest/home/docweb/-/docweb-display/docweb/9870847) on OpenAI's processing of Italian users' data, citing that breach, the lack of a legal basis for mass collection of personal data to train the models, and the absence of age verification. ChatGPT [returned in Italy on April 28](https://www.aljazeera.com/news/2023/4/28/chatgpt-available-to-users-in-italy-a-month-after-temporary-ban) after OpenAI added an age-verification tool at sign-up and a form for EU users to object to their data being used for training, but the regulator said its investigation would continue. Regulators are paying close attention to where personal data goes, and that includes data your staff submit." },
+    { "style": "normal", "text": "Meanwhile, the tools keep getting more capable and more embedded. GitHub's [Copilot X announcement](https://github.blog/2023-03-22-github-copilot-x-the-ai-powered-developer-experience/) in March previewed chat inside the editor, AI-generated pull request descriptions and a command-line assistant, some of it powered by OpenAI's newly released GPT-4. The more useful these tools become, the more context people will want to hand them." },
+
+    { "style": "h2", "text": "Treat AI usage policy as an operational control" },
+    { "style": "normal", "text": "Many organizations respond with a memo that says not to put confidential data into AI tools, and stop there. That's a start, but it's a statement of intent, not a control. An engineer under pressure at 2 a.m. will not reread the acceptable use policy." },
+    { "style": "normal", "text": "A workable approach treats AI tools like any other third-party data processor and puts controls where the data actually flows:" },
+    { "style": "bullet", "text": "**An approved-tools list.** Name the tools and account types that are allowed, and why. Business tiers with clear data-handling terms carry a different risk from personal accounts." },
+    { "style": "bullet", "text": "**Data classes, not vague rules.** Spell out what may never be submitted: credentials, customer personal data, regulated data, source code for sensitive systems. Keep it short enough to remember." },
+    { "style": "bullet", "text": "**A sanctioned path.** If you ban everything and offer nothing, usage goes underground. Give people an approved option so they don't need a workaround." },
+    { "style": "bullet", "text": "**Vendor review.** Check retention, use of submitted data for training, data residency and breach notification for every tool on the list, the same way you would for a logging or monitoring vendor." },
+    { "style": "bullet", "text": "**An incident playbook entry.** Decide in advance what happens when someone pastes something they shouldn't: who is told, which keys are rotated, and whether the vendor is contacted." },
+
+    { "style": "h2", "text": "Redact at the source" },
+    { "style": "normal", "text": "The most effective control is making sure sensitive data isn't in the logs to begin with. If logs are clean, a pasted log is a much smaller problem." },
+    { "style": "bullet", "text": "**Structured logging with field-level redaction.** Mask emails, tokens, card numbers and authorization headers in the logging library or collector, rather than relying on developers to remember." },
+    { "style": "bullet", "text": "**Secrets never logged.** Audit for request dumps and debug statements that print headers or environment variables. Add tests that fail if known secret patterns appear in log output." },
+    { "style": "bullet", "text": "**Scrubbing in the pipeline.** Apply redaction rules again at the log shipper or aggregator as a second line of defence." },
+    { "style": "bullet", "text": "**Least-privilege log access.** Not everyone who can read dashboards needs raw production logs. Fewer people with raw access means fewer chances to paste." },
+    { "style": "bullet", "text": "**Short retention for raw logs.** Keep detailed logs as long as operations and compliance require, and no longer." },
+    { "style": "normal", "text": "These are good practices with or without AI. Generative tools simply raise the cost of not having them." },
+
+    { "style": "h2", "text": "What we recommend" },
+    { "style": "normal", "text": "Don't start with a blanket ban unless you have a specific reason. Start with visibility: find out which AI tools your teams already use, and for what. Then publish a one-page usage standard with an approved-tools list and clear data classes, review the data-handling terms of each approved tool, and invest in redaction so the data that matters never reaches a log line in the first place." },
+    { "style": "normal", "text": "Finally, rehearse it. Add a scenario where sensitive data is pasted into an external tool to your next incident tabletop exercise. If the response is improvised, the policy isn't finished." },
+    { "style": "normal", "text": "If you'd like a second pair of eyes on your logging pipeline or your AI usage policy, talk to us." }
+  ],
+  "poster": {
+    "headline": "Before You Paste That Log",
+    "subhead": "Keeping production data in the building",
+    "tagline": "An AI usage policy is only real when it's enforced where data flows.",
+    "sections": [
+      { "title": "Approve the tools", "text": "Name the allowed tools and account tiers, and give people a sanctioned path to use them.", "icon": "ClipboardCheck" },
+      { "title": "Define data classes", "text": "Credentials, customer data and sensitive code never leave the building. Keep the list short.", "icon": "FileLock2" },
+      { "title": "Redact at the source", "text": "Mask tokens, emails and headers in the logger and again in the pipeline.", "icon": "EyeOff" },
+      { "title": "Rehearse the leak", "text": "Plan who is told and which keys rotate when something sensitive gets pasted.", "icon": "Siren" }
+    ]
+  },
+  "sources": [
+    { "label": "Bloomberg: Samsung bans staff's AI use after spotting ChatGPT data leak", "url": "https://www.bloomberg.com/news/articles/2023-05-02/samsung-bans-chatgpt-and-other-generative-ai-use-by-staff-after-leak", "date": "2023-05-02" },
+    { "label": "OpenAI: March 20 ChatGPT outage post-mortem (redis-py bug; 1.2% of Plus subscribers active in a nine-hour window)", "url": "https://openai.com/blog/march-20-chatgpt-outage", "date": "2023-03-24" },
+    { "label": "Garante per la protezione dei dati personali: Artificial intelligence: stop to ChatGPT by the Italian SA", "url": "https://www.gpdp.it/web/guest/home/docweb/-/docweb-display/docweb/9870847", "date": "2023-03-31" },
+    { "label": "Al Jazeera: ChatGPT available to users in Italy a month after temporary ban (age verification tool, EU objection form, Garante investigation continues)", "url": "https://www.aljazeera.com/news/2023/4/28/chatgpt-available-to-users-in-italy-a-month-after-temporary-ban", "date": "2023-04-28" },
+    { "label": "GitHub Blog: GitHub Copilot X, the AI-powered developer experience (GPT-4 powered features)", "url": "https://github.blog/2023-03-22-github-copilot-x-the-ai-powered-developer-experience/", "date": "2023-03-22" }
+  ]
+}

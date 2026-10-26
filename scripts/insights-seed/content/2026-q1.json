@@ -1,0 +1,205 @@
+{
+  "quarter": "2026-Q1",
+  "publishedAt": "2026-02-18T15:00:00.000Z",
+  "title": "Shadow Agents: When Staff Install Their Own AI Operators",
+  "slug": "shadow-agents-when-staff-install-their-own-ai-operators",
+  "excerpt": "OpenClaw went viral in weeks, and scanners soon found tens of thousands of instances on the open internet. Personal AI agents are shadow IT with credentials. Here is how to bring them in.",
+  "seoTitle": "Shadow AI Agents: Finding OpenClaw at Work",
+  "seoDescription": "Personal agents like OpenClaw hold tokens, inboxes and shell access outside IT's view. How to find them, contain them and offer staff a sanctioned alternative.",
+  "tags": [
+    "AI Agents",
+    "Shadow IT",
+    "Security",
+    "Governance",
+    "DevOps"
+  ],
+  "body": [
+    {
+      "style": "normal",
+      "text": "Shadow IT used to mean a spreadsheet on someone's personal Dropbox. In 2026 it can mean an always-on AI agent with your staff member's email, calendar, chat tokens and a shell on their laptop, reachable from the internet."
+    },
+    {
+      "style": "normal",
+      "text": "That is not a hypothetical. OpenClaw, the open-source personal assistant previously known as Clawdbot and then Moltbot, went from niche project to viral hit in a matter of weeks in January. Its creator told [VentureBeat](https://venturebeat.com/security/openclaw-agentic-ai-security-risk-ciso-guide) it passed 180,000 GitHub stars and drew 2 million visitors in a single week."
+    },
+    {
+      "style": "normal",
+      "text": "Then the scanners arrived. Last year we wrote about MCP servers as production integrations and about least privilege after the Replit and Amazon Q incidents. Those were agents IT knew about. This quarter's problem is the agents IT does not know about."
+    },
+    {
+      "style": "h2",
+      "text": "What the scans found"
+    },
+    {
+      "style": "normal",
+      "text": "On January 31, [Censys reported](https://censys.com/blog/openclaw-in-the-wild-mapping-the-public-exposure-of-a-viral-ai-assistant/) 21,639 publicly exposed OpenClaw instances, up from roughly 1,000 in under a week. Censys noted that most of the instances it could see still required a token to interact with, and that OpenClaw is designed to listen locally on TCP port 18789, with the project's own documentation recommending an SSH tunnel for remote access."
+    },
+    {
+      "style": "normal",
+      "text": "Later counts were higher, and they do not agree with each other. [Infosecurity Magazine](https://www.infosecurity-magazine.com/news/researchers-40000-exposed-openclaw/) reported on February 9 that SecurityScorecard had found 40,214 exposed instances, with the figure still rising, and that the researchers flagged three high-severity CVEs with public exploit code. A Bitdefender post on February 12 cited researchers putting the number above 135,000 and said OpenClaw binds to 0.0.0.0:18789 by default."
+    },
+    {
+      "style": "normal",
+      "text": "Different methods, different days, different numbers. The precise count matters less than the shape of the curve: a tool most security teams had never heard of in December was, by mid-February, sitting on tens of thousands of internet-facing hosts. Bitdefender also pointed to reports that many exposed instances came from corporate IP space, not just hobbyists."
+    },
+    {
+      "style": "h2",
+      "text": "Why this is worse than ordinary shadow IT"
+    },
+    {
+      "style": "normal",
+      "text": "A personal agent is not a passive app. It acts. It reads untrusted content (emails, web pages, chat messages) and holds the credentials to do something about it. Researchers quoted by VentureBeat pointed to the \"lethal trifecta\" Simon Willison has described: private data, exposure to untrusted content, and the ability to communicate externally. An agent with all three can leak data without tripping a single alert."
+    },
+    {
+      "style": "normal",
+      "text": "It is also hard to see. VentureBeat's sources noted that firewalls, EDR and SIEM tooling mostly see ordinary HTTPS or localhost traffic, not intent. Infosecurity Magazine reported some users had leaked third-party API keys through their control panels. And Cisco's researchers, per the same VentureBeat piece, found a third-party skill that quietly sent data to an external server."
+    },
+    {
+      "style": "normal",
+      "text": "Put plainly: one enthusiastic employee, one weekend install, and your Slack token, Google Workspace session and SSH keys are now reachable by whatever that agent reads next."
+    },
+    {
+      "style": "h2",
+      "text": "Bans don't work. Visibility does."
+    },
+    {
+      "style": "normal",
+      "text": "The instinct is to block it. That works about as well as banning personal Dropbox did in 2012. People install these tools because they are genuinely useful, and a ban mostly moves them to personal hardware where you have even less visibility. The better goal is to find what is running, contain what you find, and give people a sanctioned path."
+    },
+    {
+      "style": "normal",
+      "text": "Here is a starting checklist for IT and platform teams this quarter:"
+    },
+    {
+      "style": "bullet",
+      "text": "**Scan your own ranges.** Look for OpenClaw, Moltbot and Clawdbot signatures and anything listening on TCP 18789 on corporate IP space and cloud accounts."
+    },
+    {
+      "style": "bullet",
+      "text": "**Check endpoints.** Use EDR or MDM inventory to find the agent's process and config directories on managed laptops."
+    },
+    {
+      "style": "bullet",
+      "text": "**Rotate what it touched.** If you find an instance, assume every token in its config is exposed: OAuth grants, API keys, chat bot tokens, SSH keys."
+    },
+    {
+      "style": "bullet",
+      "text": "**Review OAuth grants.** Audit third-party app consents in your identity provider and revoke ones tied to unsanctioned agents."
+    },
+    {
+      "style": "bullet",
+      "text": "**Patch or remove.** Unpatched instances with known CVEs should not stay on the network while you decide on policy."
+    },
+    {
+      "style": "bullet",
+      "text": "**Vet skills and plugins.** Treat agent extensions like any third-party dependency: inventory them and review before use."
+    },
+    {
+      "style": "h2",
+      "text": "Give agents an identity, a network and a budget"
+    },
+    {
+      "style": "normal",
+      "text": "Once you know what is out there, the long-term fix is the same one we have argued for since the vibe coding piece: a paved road that is easier than the shadow one."
+    },
+    {
+      "style": "normal",
+      "text": "For personal agents, that means a sanctioned runtime where the agent gets its own scoped identity rather than borrowing a human's full session, runs in an isolated sandbox per user or per project, never binds to a public interface, and reaches the internet through an egress proxy you can log. The credential rules are the ones from our least-privilege piece last summer; what is specific to personal agents is that they must stop borrowing a human's whole session. Spending on model APIs should have a budget and an alert, so a runaway loop shows up on a dashboard instead of an invoice."
+    },
+    {
+      "style": "normal",
+      "text": "Regulation is not going to set the pace here. The European Commission's [Digital Omnibus on AI](https://digital-strategy.ec.europa.eu/en/library/digital-omnibus-ai-regulation-proposal), proposed on November 19, 2025, is about simplifying and re-timing parts of the AI Act, not about whether your staff can run an agent on their laptop. That decision sits with you."
+    },
+    {
+      "style": "h2",
+      "text": "What we recommend"
+    },
+    {
+      "style": "bullet",
+      "text": "Write a one-page personal-agent policy this month: what is allowed, where it must run, which data it may touch."
+    },
+    {
+      "style": "bullet",
+      "text": "Run a discovery sweep across network ranges, cloud accounts and endpoints, and repeat it monthly."
+    },
+    {
+      "style": "bullet",
+      "text": "Stand up a sanctioned agent sandbox with its own identity, egress logging and a token budget."
+    },
+    {
+      "style": "bullet",
+      "text": "Offer an amnesty: ask staff to declare the agents they already run, then help them move into the sandbox."
+    },
+    {
+      "style": "bullet",
+      "text": "Add \"agent compromise\" to your incident runbooks, including which tokens to rotate first."
+    },
+    {
+      "style": "normal",
+      "text": "Staff will keep reaching for tools that save them time. The job is to make the safe version the convenient one."
+    },
+    {
+      "style": "normal",
+      "text": "If you want help standing up sandboxes, guardrails and budgets for agents your teams already want to use, the HAZL Solutions team can work alongside your IT group."
+    }
+  ],
+  "poster": {
+    "headline": "Shadow Agents:",
+    "subhead": "Personal AI Operators Outside IT",
+    "tagline": "Staff install agents with real credentials. Find and fence them.",
+    "sections": [
+      {
+        "title": "Find what's running",
+        "text": "Scan your IP ranges, cloud accounts and endpoints for agent signatures and exposed ports.",
+        "icon": "Radar"
+      },
+      {
+        "title": "Rotate exposed tokens",
+        "text": "Any token in an agent's config is suspect: OAuth grants, API keys, chat tokens, SSH keys.",
+        "icon": "KeyRound"
+      },
+      {
+        "title": "Never bind to public",
+        "text": "Sanctioned agents run in sandboxes, behind a tunnel, with logged egress.",
+        "icon": "Network"
+      },
+      {
+        "title": "Identity and budget",
+        "text": "Give each agent its own scoped, short-lived identity and a spend alert.",
+        "icon": "ShieldCheck"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "Censys: OpenClaw in the Wild: Mapping the Public Exposure of a Viral AI Assistant",
+      "url": "https://censys.com/blog/openclaw-in-the-wild-mapping-the-public-exposure-of-a-viral-ai-assistant/",
+      "date": "2026-01-31"
+    },
+    {
+      "label": "VentureBeat: OpenClaw agentic AI security risk, CISO guide",
+      "url": "https://venturebeat.com/security/openclaw-agentic-ai-security-risk-ciso-guide",
+      "date": "2026-01-30"
+    },
+    {
+      "label": "Cyber Press: Over 21,000 OpenClaw AI instances found exposing personal configuration data",
+      "url": "https://cyberpress.org/over-21000-openclaw-ai-instances-found-exposing-personal-configuration-data/",
+      "date": "2026-02-02"
+    },
+    {
+      "label": "Infosecurity Magazine: Researchers find 40,000+ exposed OpenClaw instances (SecurityScorecard)",
+      "url": "https://www.infosecurity-magazine.com/news/researchers-40000-exposed-openclaw/",
+      "date": "2026-02-09"
+    },
+    {
+      "label": "Bitdefender HOTforSecurity: 135K OpenClaw AI agents exposed online",
+      "url": "https://www.bitdefender.com/en-us/blog/hotforsecurity/135k-openclaw-ai-agents-exposed-online",
+      "date": "2026-02-12"
+    },
+    {
+      "label": "European Commission: Digital Omnibus on AI regulation proposal",
+      "url": "https://digital-strategy.ec.europa.eu/en/library/digital-omnibus-ai-regulation-proposal",
+      "date": "2025-11-19"
+    }
+  ]
+}

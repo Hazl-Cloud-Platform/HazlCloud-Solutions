@@ -1,0 +1,64 @@
+{
+  "quarter": "2023-Q1",
+  "publishedAt": "2023-02-15T15:00:00.000Z",
+  "title": "ChatGPT Can Write Your Terraform. Who Signs Off Before It Ships?",
+  "slug": "chatgpt-can-write-your-terraform-who-signs-off",
+  "excerpt": "AI assistants can draft infrastructure code in seconds. That code is still yours. Here's how to make review, policy as code and CI gates do the trusting.",
+  "seoTitle": "AI-Written Terraform: Who Signs Off?",
+  "seoDescription": "AI assistants now draft infrastructure code in seconds, but accountability stays with you. Use peer review, policy as code and CI gates to ship it safely.",
+  "tags": ["AI", "DevOps", "Infrastructure as Code", "Security"],
+  "body": [
+    { "style": "normal", "text": "Ask ChatGPT for a Terraform module that stands up a storage bucket, an IAM role and a CDN in front of it, and you'll get something plausible in seconds. It will look right. It will often run. Whether it is *safe* is a different question, and nobody on your team gets to skip that question because a model typed the code." },
+    { "style": "normal", "text": "Adoption isn't waiting for policy. Reuters [reported](https://www.reuters.com/technology/chatgpt-sets-record-fastest-growing-user-base-analyst-note-2023-02-01/) on February 1 that UBS analysts estimate ChatGPT reached 100 million monthly active users in January, two months after launch. Yesterday, GitHub made [Copilot for Business](https://github.blog/2023-02-14-github-copilot-for-business-is-now-available/) available, putting AI code suggestions in the editors of whole engineering organizations." },
+    { "style": "normal", "text": "So the question for platform and DevOps leads is no longer whether engineers will use these tools on infrastructure code. They already do. The question is what has to be true before that code reaches production." },
+
+    { "style": "h2", "text": "Faster to write is not the same as faster to ship" },
+    { "style": "normal", "text": "The productivity case is real. In a [controlled experiment published by GitHub](https://github.blog/2022-09-07-research-quantifying-github-copilots-impact-on-developer-productivity-and-happiness/), 95 professional developers were asked to write an HTTP server in JavaScript. The group using Copilot finished 55% faster on average: about 1 hour 11 minutes, against 2 hours 41 minutes without it." },
+    { "style": "normal", "text": "But notice what was measured: time to complete a well-defined coding task. Infrastructure code has a different failure profile. A web handler with a bug throws an error. A Terraform change with a bug might open a security group to the internet, attach an over-broad IAM policy, or quietly replace a database instead of modifying it. Those mistakes don't fail loudly. They pass `terraform apply` and wait." },
+    { "style": "normal", "text": "Language models learn from public code, and public infrastructure examples are full of shortcuts: wildcard permissions, hard-coded regions, demo credentials, public buckets for quick testing. A tool that reproduces common patterns will reproduce common shortcuts too." },
+
+    { "style": "h2", "text": "The code is yours, whoever typed it" },
+    { "style": "normal", "text": "It's tempting to treat AI output as somehow pre-vetted. It isn't. GitHub describes Copilot for Business as adding AI-based vulnerability filtering that blocks common insecure suggestions, such as hard-coded credentials, SQL injection and path injection. That's useful. It's also a signal: the vendor expects insecure suggestions to happen, and a filter for known patterns knows nothing about your environment's rules." },
+    { "style": "normal", "text": "Your auditors, your incident reviews and your customers won't distinguish between a misconfiguration a person wrote and one a model suggested. Accountability stays with the team that merged it. That makes the review and the pipeline, not the authoring tool, the place where trust is established." },
+    { "style": "normal", "text": "The [NIST AI Risk Management Framework 1.0](https://www.nist.gov/itl/ai-risk-management-framework), released on January 26, is organized around four functions: Govern, Map, Measure and Manage. You don't need to adopt it wholesale to borrow the mindset. Decide who owns the risk, understand where AI touches your systems, measure the outcomes, and manage them with controls you can show someone." },
+
+    { "style": "h2", "text": "Put the guardrails in the pipeline, not in people's memory" },
+    { "style": "normal", "text": "Asking engineers to be careful with AI code doesn't scale. Making the pipeline enforce the same rules for every change, regardless of who or what wrote it, does. For infrastructure as code, that means:" },
+    { "style": "bullet", "text": "**Mandatory review on every IaC change.** Protected branches, at least one reviewer who owns the affected environment, and no self-merging into production workspaces." },
+    { "style": "bullet", "text": "**Plan output in the pull request.** Reviewers should read the `terraform plan`, not just the diff. Replacements and deletions should be impossible to miss." },
+    { "style": "bullet", "text": "**Policy as code.** Encode your non-negotiables (no public buckets, no wildcard IAM actions, encryption on by default, required tags) with a tool such as Open Policy Agent, Checkov or tfsec, and fail the build when they're violated." },
+    { "style": "bullet", "text": "**Secret scanning before merge.** Generated examples love placeholder keys. Scan every commit and treat a hit as a blocking failure, not a warning." },
+    { "style": "bullet", "text": "**Least-privilege pipeline credentials.** The CI role that applies Terraform should only be able to touch what that workspace manages." },
+    { "style": "bullet", "text": "**Drift detection.** Run scheduled plans against production so manual quick fixes copied from a chat window show up within hours, not months." },
+    { "style": "normal", "text": "None of this is new, and that's the point. The controls that made infrastructure as code trustworthy before AI assistants are exactly the controls that make AI-assisted infrastructure code trustworthy now. What changes is volume. When drafting is nearly free, review becomes the constraint, so automate everything a machine can check and save human attention for intent and blast radius." },
+
+    { "style": "h2", "text": "Set expectations before habits set themselves" },
+    { "style": "normal", "text": "Teams form habits fast. If the first few months of AI-assisted work happen without clear expectations, you'll inherit whatever practices individuals invented on their own. A short written standard now is far cheaper than retrofitting one later. It should answer a few questions plainly:" },
+    { "style": "bullet", "text": "Which AI coding tools are approved, and under which account or licence?" },
+    { "style": "bullet", "text": "What must never be pasted into them, such as credentials, customer data or sensitive source code?" },
+    { "style": "bullet", "text": "Does AI-assisted code get different treatment in review? Our view: no exemptions, same bar." },
+    { "style": "bullet", "text": "Who owns the policy-as-code rules, and how are exceptions requested and recorded?" },
+
+    { "style": "h2", "text": "What we recommend" },
+    { "style": "normal", "text": "Let engineers use the tools. The productivity gains are worth having, and banning them outright mostly pushes usage out of sight. But treat every AI-generated line of infrastructure code as a contribution from a fast, confident new hire: welcome, useful, and reviewed." },
+    { "style": "normal", "text": "Concretely: make plan output visible in every pull request, codify your most important infrastructure rules as policy checks that block merges, scan for secrets on every commit, and scope pipeline credentials tightly. If you already do these things, AI assistants are mostly upside. If you don't, they will find the gaps for you." },
+    { "style": "normal", "text": "If your team needs help putting these guardrails into your pipelines, talk to us." }
+  ],
+  "poster": {
+    "headline": "AI Wrote It. You Ship It.",
+    "subhead": "Guardrails for AI-written infrastructure",
+    "tagline": "The code is yours, whoever typed it. Let the pipeline prove it.",
+    "sections": [
+      { "title": "Review every IaC change", "text": "Protected branches, an environment owner as reviewer, and plan output in every pull request.", "icon": "ClipboardCheck" },
+      { "title": "Policy as code", "text": "Block public buckets, wildcard IAM and unencrypted storage automatically, before merge.", "icon": "ShieldCheck" },
+      { "title": "Scan for secrets", "text": "Generated examples love placeholder keys. Every hit fails the build, not just warns.", "icon": "KeyRound" },
+      { "title": "Least-privilege CI", "text": "The pipeline role can only touch what its workspace manages. Drift checks catch the rest.", "icon": "Lock" }
+    ]
+  },
+  "sources": [
+    { "label": "Reuters: ChatGPT sets record for fastest-growing user base (UBS analyst note, 100M MAU in January)", "url": "https://www.reuters.com/technology/chatgpt-sets-record-fastest-growing-user-base-analyst-note-2023-02-01/", "date": "2023-02-01" },
+    { "label": "GitHub Blog: GitHub Copilot for Business is now available (vulnerability filtering)", "url": "https://github.blog/2023-02-14-github-copilot-for-business-is-now-available/", "date": "2023-02-14" },
+    { "label": "GitHub Blog: Research quantifying GitHub Copilot's impact (95 developers, 55% faster, 1h11m vs 2h41m)", "url": "https://github.blog/2022-09-07-research-quantifying-github-copilots-impact-on-developer-productivity-and-happiness/", "date": "2022-09-07" },
+    { "label": "NIST AI Risk Management Framework 1.0 (released 2023-01-26; Govern, Map, Measure, Manage)", "url": "https://www.nist.gov/itl/ai-risk-management-framework", "date": "2023-01-26" }
+  ]
+}

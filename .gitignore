@@ -69,3 +69,6 @@ ds-bundle/
 /.vibe-storage/
 /.vibe-admin-password.txt
 .dns-backup/
+
+# insights seed build output
+/scripts/insights-seed/out/

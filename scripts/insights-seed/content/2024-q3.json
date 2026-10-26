@@ -1,0 +1,166 @@
+{
+  "quarter": "2024-Q3",
+  "publishedAt": "2024-08-14T15:00:00.000Z",
+  "title": "What the CrowdStrike Outage Teaches Us About Shipping AI-Generated Changes",
+  "slug": "crowdstrike-outage-lessons-shipping-ai-generated-changes",
+  "excerpt": "One configuration file reached millions of Windows machines in 78 minutes. As AI writes more of our changes, staged rollouts, canaries and fast rollback stop being optional.",
+  "seoTitle": "CrowdStrike Lessons for AI-Generated Changes",
+  "seoDescription": "The CrowdStrike outage was a rollout failure, not just a bug. Why staged deployment, canaries and rollback matter more as AI writes more of your changes.",
+  "tags": [
+    "Incident Response",
+    "Release Engineering",
+    "AI",
+    "DevOps"
+  ],
+  "body": [
+    {
+      "style": "normal",
+      "text": "At 04:09 UTC on July 19, CrowdStrike pushed a content update for its Falcon sensor on Windows. It was [reverted at 05:27 UTC](https://www.crowdstrike.com/falcon-content-update-remediation-and-guidance-hub/). In those 78 minutes, Microsoft [estimates](https://blogs.microsoft.com/blog/2024/07/20/helping-our-customers-through-the-crowdstrike-outage/) that roughly 8.5 million Windows devices were affected, less than one percent of all Windows machines, and the disruption that followed was felt around the world."
+    },
+    {
+      "style": "normal",
+      "text": "It is tempting to file this under \"security vendor bug\" and move on. That would miss the part that applies to every engineering team, and especially to teams that are starting to let AI write their changes."
+    },
+    {
+      "style": "normal",
+      "text": "The defect got through testing. What turned a defect into a global outage was that the change went everywhere at once."
+    },
+    {
+      "style": "h2",
+      "text": "It was configuration, and it shipped like configuration"
+    },
+    {
+      "style": "normal",
+      "text": "The faulty update was Channel File 291, delivered as what CrowdStrike calls Rapid Response Content. CrowdStrike's own guidance describes it as configuration data, not code or a kernel driver. That distinction is exactly the problem. In most organizations, code goes through staged rollouts and change review, while configuration, feature flags and content updates take a faster lane because they feel lower risk."
+    },
+    {
+      "style": "normal",
+      "text": "Look at what CrowdStrike has since committed to in its preliminary post-incident review and root cause analysis: a staggered deployment starting with a canary, monitoring to guide phased rollouts, deployment rings that content must pass through before reaching production, additional validation and bounds checking, and new controls that let customers decide how Rapid Response Content is deployed to their fleets."
+    },
+    {
+      "style": "normal",
+      "text": "None of that is exotic. It is standard progressive delivery, applied to a class of change that had been treated as too small to need it."
+    },
+    {
+      "style": "h2",
+      "text": "Machines are about to write a lot more of your changes"
+    },
+    {
+      "style": "normal",
+      "text": "In June, Anthropic released [Claude 3.5 Sonnet](https://www.anthropic.com/news/claude-3-5-sonnet) and reported that in an internal agentic coding evaluation, where the model fixes bugs or adds features to open source codebases from plain-language descriptions, it solved 64% of problems, against 38% for Claude 3 Opus. Whatever the exact numbers on your codebase, the direction is clear: models are getting good enough to produce multi-file changes that pass tests."
+    },
+    {
+      "style": "normal",
+      "text": "That shifts where the risk sits. When a person writes a change, review and the author's own understanding are the main safeguards. When a model writes it, review is often thinner, and the author may not fully understand every line. The safety net has to move to the rollout itself: assume some changes will be wrong in ways tests missed, and make sure a wrong change reaches a few machines, not all of them."
+    },
+    {
+      "style": "normal",
+      "text": "This applies doubly to the fast lanes. AI is very good at generating configuration, policy files, Helm values and Terraform variables, exactly the changes many pipelines push straight to production."
+    },
+    {
+      "style": "h2",
+      "text": "A rollout checklist that does not care who wrote the change"
+    },
+    {
+      "style": "bullet",
+      "text": "**Every change type gets a ring.** Code, configuration, feature flags, content and infrastructure all go through the same staged path. No class of change is too small."
+    },
+    {
+      "style": "bullet",
+      "text": "**Canary first, with real traffic.** Start with a small, representative slice and wait long enough to see crashes, error rates and latency move."
+    },
+    {
+      "style": "bullet",
+      "text": "**Automatic halt.** Define the health signals that stop a rollout before you start it, and let the pipeline stop on its own."
+    },
+    {
+      "style": "bullet",
+      "text": "**Rollback in one step.** Practise reverting each change type. If a bad change can leave machines unable to boot or reach you, your rollback plan cannot depend on them doing either."
+    },
+    {
+      "style": "bullet",
+      "text": "**Validate inputs, not just outputs.** Schema and bounds checks on generated config catch the class of error tests often miss."
+    },
+    {
+      "style": "bullet",
+      "text": "**Give downstream teams control.** If you ship to customers or internal platforms, let them choose their ring and their timing."
+    },
+    {
+      "style": "bullet",
+      "text": "**Label AI-authored changes.** Not to block them, but so you can see their failure rate and tune how far they go before a human looks again."
+    },
+    {
+      "style": "h2",
+      "text": "The regulatory backdrop is changing too"
+    },
+    {
+      "style": "normal",
+      "text": "On August 1, the [EU AI Act entered into force](https://commission.europa.eu/news/ai-act-enters-force-2024-08-01_en). It sorts AI systems into risk tiers, from minimal risk with no obligations up to high-risk systems that must meet requirements including risk mitigation and human oversight, with rules for general-purpose AI models applying in 12 months. Most internal coding assistants will not be high-risk systems. But the direction of travel is clear: regulators expect you to show how AI-produced outcomes are controlled, and a documented, staged release process is one of the easiest things to show."
+    },
+    {
+      "style": "h2",
+      "text": "What we recommend"
+    },
+    {
+      "style": "normal",
+      "text": "This month, list every path by which a change can reach production, including the quiet ones: config pushes, flag flips, content updates, scripts run by hand. For each, write down its rings, its halt conditions and its rollback. Any path without all three is where your next incident starts, whether a person or a model writes the change."
+    },
+    {
+      "style": "normal",
+      "text": "Then run a rollback drill on the scariest one."
+    },
+    {
+      "style": "normal",
+      "text": "If you would like help building progressive delivery into those paths, the HAZL Solutions team is happy to talk it through."
+    }
+  ],
+  "poster": {
+    "headline": "Lessons from CrowdStrike:",
+    "subhead": "Ship AI Changes in Rings",
+    "tagline": "The bug got through testing. The rollout made it a global outage.",
+    "sections": [
+      {
+        "title": "78 Minutes, 8.5M Devices",
+        "text": "One config file reached millions of Windows machines before it was reverted.",
+        "icon": "Radar"
+      },
+      {
+        "title": "Config Is Code",
+        "text": "Content and config updates need the same staged rollout as any code change.",
+        "icon": "Layers"
+      },
+      {
+        "title": "Canary, Halt, Roll Back",
+        "text": "Small first slice, automatic stop on health signals, one-step rollback you have practised.",
+        "icon": "Bird"
+      },
+      {
+        "title": "AI Raises the Stakes",
+        "text": "Models now write multi-file changes. Rollout discipline is the safety net that scales.",
+        "icon": "ShieldCheck"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "Microsoft: Helping our customers through the CrowdStrike outage",
+      "url": "https://blogs.microsoft.com/blog/2024/07/20/helping-our-customers-through-the-crowdstrike-outage/",
+      "date": "2024-07-20"
+    },
+    {
+      "label": "CrowdStrike: Falcon content update remediation and guidance hub (PIR and RCA)",
+      "url": "https://www.crowdstrike.com/falcon-content-update-remediation-and-guidance-hub/",
+      "date": "2024-08-06"
+    },
+    {
+      "label": "European Commission: AI Act enters into force",
+      "url": "https://commission.europa.eu/news/ai-act-enters-force-2024-08-01_en",
+      "date": "2024-08-01"
+    },
+    {
+      "label": "Anthropic: Introducing Claude 3.5 Sonnet",
+      "url": "https://www.anthropic.com/news/claude-3-5-sonnet",
+      "date": "2024-06-20"
+    }
+  ]
+}

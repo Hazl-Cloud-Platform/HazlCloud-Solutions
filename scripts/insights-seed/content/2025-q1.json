@@ -1,0 +1,215 @@
+{
+  "quarter": "2025-Q1",
+  "publishedAt": "2025-02-19T15:00:00.000Z",
+  "title": "Vibe Coding Has a Name. Now It Needs a Landing Zone",
+  "slug": "vibe-coding-needs-a-landing-zone",
+  "excerpt": "Vibe coding now has a name, and plenty of internal apps already come from it. Before they turn into shadow production, give them a paved path: hosting, SSO, secrets, backups and an owner.",
+  "seoTitle": "Vibe Coding Needs an IT Landing Zone",
+  "seoDescription": "Vibe-coded internal apps are spreading fast. Here is how IT can build a landing zone with hosting, SSO, secrets, backups and owners before they become a risk.",
+  "tags": [
+    "AI",
+    "Vibe Coding",
+    "Platform Engineering",
+    "DevOps",
+    "Governance"
+  ],
+  "body": [
+    {
+      "style": "normal",
+      "text": "On February 2, Andrej Karpathy put a name to something a lot of us had already noticed: [vibe coding](https://x.com/karpathy/status/1886192184808149383). It means building software by talking to a model and letting it handle the code, or, in his words, choosing to \"fully give in to the vibes.\" The phrase [spread quickly](https://simonwillison.net/2025/Feb/6/andrej-karpathy/) among developers."
+    },
+    {
+      "style": "normal",
+      "text": "The name is new. The habit isn't. People outside engineering are already building internal tools in an afternoon: a dashboard on top of a spreadsheet, an intake form, a small approval workflow. Some of these tools are genuinely useful, and that is the problem. Useful tools get shared, and once a tool is shared it is production, whether or not anyone decided that."
+    },
+    {
+      "style": "normal",
+      "text": "So the question for IT isn't whether to allow it. The question is where these apps will live once they stop being experiments."
+    },
+    {
+      "style": "h2",
+      "text": "Shadow production is the real risk"
+    },
+    {
+      "style": "normal",
+      "text": "A vibe-coded app on someone's laptop is a toy. Put the same app on a public URL with a customer list and an API key inside, and it becomes a system. It just has no owner, no backups and nobody reading its logs."
+    },
+    {
+      "style": "normal",
+      "text": "Days before Karpathy's post, Wiz Research showed how fast that goes wrong, even at a well-funded AI company. They found a [publicly accessible ClickHouse database belonging to DeepSeek](https://www.wiz.io/blog/wiz-research-uncovers-exposed-deepseek-database-leak). It was completely open and unauthenticated, and it exposed chat history, API secrets, backend details and a log table of more than a million entries. DeepSeek secured it promptly once Wiz disclosed it. Nothing about the exposure was exotic, though. It was a database on the internet with no authentication, which is about the most ordinary mistake in operations."
+    },
+    {
+      "style": "normal",
+      "text": "We expect shadow production to fail the same way. Clever attacks won't be the cause. Missing basics will: a hardcoded key in a public repo, a database left open because the tutorial said so, no backups because nobody knew the app mattered until it broke."
+    },
+    {
+      "style": "h2",
+      "text": "What a landing zone for vibe-coded apps looks like"
+    },
+    {
+      "style": "normal",
+      "text": "Banning these tools won't fix this. A ban only pushes the work further out of sight. What works is a paved path: if an app took an afternoon to build, it should take about an afternoon to deploy, with the basics already in place. Think of it as a landing zone sized for small internal tools rather than enterprise workloads."
+    },
+    {
+      "style": "normal",
+      "text": "At minimum, it should give every app:"
+    },
+    {
+      "style": "bullet",
+      "text": "**Hosting you control.** A standard container or app platform in your organization's cloud account, not someone's personal free-tier account."
+    },
+    {
+      "style": "bullet",
+      "text": "**Identity in front by default.** Every app sits behind your SSO. An app gets a public endpoint only when someone explicitly asks for one and justifies it."
+    },
+    {
+      "style": "bullet",
+      "text": "**A secrets store.** API keys come from a managed vault or are injected at runtime, never from source code. Scan every push for leaked keys."
+    },
+    {
+      "style": "bullet",
+      "text": "**Managed data with backups.** A provisioned database with authentication on, restricted network access, and automated backups you have actually restored in a test."
+    },
+    {
+      "style": "bullet",
+      "text": "**Logs and an owner.** Basic logging, an uptime check, and the builder's name recorded as the owner."
+    },
+    {
+      "style": "bullet",
+      "text": "**A template repo.** Starter code with all of the above already wired in, so the fastest way to start is also the safe one."
+    },
+    {
+      "style": "normal",
+      "text": "None of this is new technology. It's the platform work good DevOps teams already do for engineers, opened up to a new kind of builder."
+    },
+    {
+      "style": "h2",
+      "text": "The regulatory clock started the same day"
+    },
+    {
+      "style": "normal",
+      "text": "The day Karpathy coined the term, the first provisions of the EU AI Act began to apply. According to the [European Commission](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai), the bans on prohibited AI practices and the AI literacy obligations have applied since February 2, 2025."
+    },
+    {
+      "style": "normal",
+      "text": "For a Canadian organization, the Act matters mostly if you offer AI systems in the EU or their output is used there. The idea behind AI literacy is worth borrowing either way: people who build with AI should understand what the tools can and can't do. For vibe coders, that means knowing a model will happily write a working app that stores passwords in plain text. An app that runs is not necessarily an app that is safe."
+    },
+    {
+      "style": "normal",
+      "text": "A landing zone helps with literacy as well. Guardrails built into the platform teach better than any training deck, because they show up right when someone is about to make the mistake."
+    },
+    {
+      "style": "h2",
+      "text": "Graduating from experiment to system"
+    },
+    {
+      "style": "normal",
+      "text": "Most vibe-coded apps don't need the full treatment. Many will stay small and quietly fade away. What you need is a clear trigger for when an app graduates. For example:"
+    },
+    {
+      "style": "bullet",
+      "text": "More than one team uses it."
+    },
+    {
+      "style": "bullet",
+      "text": "It stores personal, financial or customer data."
+    },
+    {
+      "style": "bullet",
+      "text": "It writes to another system of record."
+    },
+    {
+      "style": "bullet",
+      "text": "Someone would notice, and complain, if it went down."
+    },
+    {
+      "style": "normal",
+      "text": "When any of these is true, the app gets a short review covering who owns it, where its data lives, how it's backed up and what it can reach. That usually takes about an hour. Skip it, and a weekend experiment can become next quarter's incident."
+    },
+    {
+      "style": "h2",
+      "text": "What we recommend"
+    },
+    {
+      "style": "normal",
+      "text": "If you lead IT or a platform team and you're watching vibe coding spread through your organization, start here:"
+    },
+    {
+      "style": "bullet",
+      "text": "**Find out what already exists.** Ask instead of auditing. An amnesty gets more honest answers."
+    },
+    {
+      "style": "bullet",
+      "text": "**Stand up a minimal landing zone** with SSO, a secrets store, a managed database with backups, and logging."
+    },
+    {
+      "style": "bullet",
+      "text": "**Publish one template repo** and make it the easiest place to start."
+    },
+    {
+      "style": "bullet",
+      "text": "**Define graduation triggers** and a lightweight review to go with them."
+    },
+    {
+      "style": "bullet",
+      "text": "**Keep the review fast.** If the safe path is slow, people will go around it."
+    },
+    {
+      "style": "normal",
+      "text": "Vibe coding is going to produce a lot more software. The organizations that come out ahead will be the ones that give that software somewhere safe to land."
+    },
+    {
+      "style": "normal",
+      "text": "Building this kind of paved path for IT teams is everyday work for HAZL's DevOps engineers. If you'd like help setting one up, we're happy to talk."
+    }
+  ],
+  "poster": {
+    "headline": "Vibe Coding Needs a Landing Zone",
+    "subhead": "Before it becomes shadow production",
+    "tagline": "Apps built in an afternoon still need a safe place to run.",
+    "sections": [
+      {
+        "title": "Shadow production",
+        "text": "Shared tools become production, often with no owner, no backups and no one watching.",
+        "icon": "ShieldAlert"
+      },
+      {
+        "title": "Pave the path",
+        "text": "Hosting you control, SSO in front, secrets in a vault and managed data with backups.",
+        "icon": "Route"
+      },
+      {
+        "title": "Graduation triggers",
+        "text": "Multiple teams, sensitive data or writes to systems of record mean it gets a review.",
+        "icon": "ListChecks"
+      },
+      {
+        "title": "Literacy via guardrails",
+        "text": "Platform defaults teach safe habits right when a builder is about to make a mistake.",
+        "icon": "ShieldCheck"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "Andrej Karpathy on X: coining 'vibe coding' (quoted in full by Simon Willison, 2025-02-06)",
+      "url": "https://x.com/karpathy/status/1886192184808149383",
+      "date": "2025-02-02"
+    },
+    {
+      "label": "Simon Willison's Weblog: quotation of Karpathy's vibe coding post (includes 'fully give in to the vibes')",
+      "url": "https://simonwillison.net/2025/Feb/6/andrej-karpathy/",
+      "date": "2025-02-06"
+    },
+    {
+      "label": "Wiz Research: Wiz Research Uncovers Exposed DeepSeek Database Leaking Sensitive Information",
+      "url": "https://www.wiz.io/blog/wiz-research-uncovers-exposed-deepseek-database-leak",
+      "date": "2025-01-29"
+    },
+    {
+      "label": "European Commission: AI Act regulatory framework (prohibitions and AI literacy apply from 2 Feb 2025)",
+      "url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+      "date": "2025-02-02"
+    }
+  ]
+}

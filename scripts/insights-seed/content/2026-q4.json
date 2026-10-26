@@ -1,0 +1,198 @@
+{
+  "quarter": "2026-Q4",
+  "publishedAt": "2026-10-14T15:00:00.000Z",
+  "title": "Governing the Agent Workforce: Repo Trust, Inventory and Audit",
+  "slug": "governing-the-agent-workforce-repo-trust-inventory-and-audit",
+  "excerpt": "GitSpawn showed a repo can make coding agents run code before the permission prompt appears. Governing agents now means untrusted workspaces, an agent registry, a real audit trail and named owners.",
+  "seoTitle": "Governing AI Coding Agents After GitSpawn",
+  "seoDescription": "GitSpawn showed a repo's .git/config can make coding agents run code before any prompt. Treat workspaces as untrusted, keep an agent registry and own the audit.",
+  "tags": [
+    "AI Agents",
+    "Governance",
+    "Identity",
+    "Security",
+    "DevOps"
+  ],
+  "body": [
+    {
+      "style": "normal",
+      "text": "Most teams govern AI coding agents with one control: the permission prompt. The agent asks, a developer clicks allow, work continues. It feels like a human in the loop."
+    },
+    {
+      "style": "normal",
+      "text": "On September 1, researchers showed how thin that layer can be. A repository can make several popular coding agents run attacker code on a developer's machine before the agent ever asks for permission."
+    },
+    {
+      "style": "normal",
+      "text": "This year we have written about least privilege for agents, shadow agents installed outside IT's view and intrusions moving at machine speed. The credential advice from those pieces still stands: separate identities, narrow and short-lived access, approval gates the agent cannot grant itself, backups out of reach. This piece is about the four things they left open: what the agent trusts, what you know about your agents, what you can prove afterwards, and who is in charge."
+    },
+    {
+      "style": "h2",
+      "text": "GitSpawn: when the repo runs before the prompt"
+    },
+    {
+      "style": "normal",
+      "text": "Manifold Security [published GitSpawn](https://www.manifold.security/blog/ai-coding-agents-git-hijack) on September 1: eight findings across seven command-line AI coding agents, with four still unpatched at publication. [The Hacker News reported](https://thehackernews.com/2026/09/malicious-git-configs-can-make-claude.html) it the next day. The core trick uses `core.fsmonitor`, a Git performance setting whose value is a command Git runs to detect changed files. A malicious `.git/config` points it at an attacker's command."
+    },
+    {
+      "style": "normal",
+      "text": "Agents run commands like `git status` in the background at startup to understand the workspace. That triggers the setting, and the command runs as the user, outside the agent's sandbox, with no approval prompt. Manifold reported that in at least one agent the payload ran before the workspace-trust prompt was even accepted."
+    },
+    {
+      "style": "normal",
+      "text": "There are limits worth stating. Exploitation needs the repository to arrive with its `.git` directory intact, such as a shared archive, shared drive, sync folder or USB stick; an ordinary clone does not carry the config. The Hacker News found no reports of exploitation, and several vendors had shipped fixes while others were still pending."
+    },
+    {
+      "style": "normal",
+      "text": "The bigger point is architectural. The agent's permission system governed the agent's own tool calls. It did not govern everything that happened in the developer's environment because the agent was there. A permission prompt depends on a human paying attention, on the agent describing what it is about to do, and on every side effect going through the prompt. GitSpawn broke the third assumption. Prompt fatigue breaks the first one every day."
+    },
+    {
+      "style": "h2",
+      "text": "Treat the workspace as untrusted input"
+    },
+    {
+      "style": "normal",
+      "text": "We already treat web pages and emails as untrusted input for agents. Repositories and their configuration belong in the same category. A workspace is not just source code: it carries Git config, hooks, editor task files, dependency manifests and, increasingly, agent instruction and tool configuration files. Any of them can change what runs when an agent opens the folder."
+    },
+    {
+      "style": "bullet",
+      "text": "**Open received code in a throwaway environment.** Anything that arrives as files rather than a clone from a known remote gets opened first in a disposable container or VM with no credentials."
+    },
+    {
+      "style": "bullet",
+      "text": "**Check config before the agent does.** Look for `core.fsmonitor`, `core.hooksPath` and filter settings in `.git/config`, and for unexpected hooks or task files."
+    },
+    {
+      "style": "bullet",
+      "text": "**Review agent config like CI config.** Changes to agent instruction files, tool settings and server lists should need a code owner's approval, the same as a pipeline definition."
+    },
+    {
+      "style": "h2",
+      "text": "Keep an agent registry"
+    },
+    {
+      "style": "normal",
+      "text": "GitSpawn affected seven agents. The first question every security team had was which of them their developers run, and which versions. Most could not answer quickly. A registry turns that into a lookup. For each agent, record:"
+    },
+    {
+      "style": "bullet",
+      "text": "The tool and version, and where it runs: laptops, CI, cloud workspaces."
+    },
+    {
+      "style": "bullet",
+      "text": "The identity it acts as and the systems that identity can reach."
+    },
+    {
+      "style": "bullet",
+      "text": "Which workspaces and config sources it reads at startup."
+    },
+    {
+      "style": "bullet",
+      "text": "A named human owner and the business purpose it serves."
+    },
+    {
+      "style": "normal",
+      "text": "Feed vendor advisories against that list, pin versions, and treat an unregistered agent as a finding rather than a curiosity."
+    },
+    {
+      "style": "h2",
+      "text": "Design the audit trail before you need it"
+    },
+    {
+      "style": "normal",
+      "text": "Logging tool calls is not enough. In GitSpawn the harmful command was not a tool call at all; it was a process Git started because the agent asked for status. An audit trail for agents should capture who or what made the request, which workspace and config were loaded, which tools were called, which credentials were used, and the process tree underneath, linked by one session ID. Endpoint tooling that records process lineage gives you the last part. Ship it all somewhere the agent cannot write, and test that you can answer \"what did it do?\" in minutes."
+    },
+    {
+      "style": "h2",
+      "text": "Decide who owns agent governance"
+    },
+    {
+      "style": "normal",
+      "text": "Agents fall between teams. IT manages the laptops and licences, security writes policy and handles advisories, and the business or engineering lead decides what the agent is for. When nobody is named, every team assumes another one has it. A workable split: IT owns the registry and the managed runtime, security owns policy, detection and response, and each agent's business owner approves its scope and answers for its actions. Write that down in one page."
+    },
+    {
+      "style": "normal",
+      "text": "Vendors are moving the same way. On October 6, [ServiceNow announced](https://newsroom.servicenow.com/press-releases/details/2026/ServiceNow-launches-AI-Workflow-Factory-to-turn-workflow-improvement-into-a-continuous-agentic-AI-powered-loop/default.aspx) AI Workflow Factory, with its AI Control Tower governing \"the workflows, decisions, and agent actions\" and a single governance model and audit log for apps and agents on its platform. You do not need that product to apply the idea. You do need the idea."
+    },
+    {
+      "style": "h2",
+      "text": "What we recommend"
+    },
+    {
+      "style": "bullet",
+      "text": "**Patch and pin agent CLIs.** Track vendor advisories for GitSpawn-class issues and keep agents on fixed versions."
+    },
+    {
+      "style": "bullet",
+      "text": "**Stand up the registry this quarter,** with an owner for every entry."
+    },
+    {
+      "style": "bullet",
+      "text": "**Make untrusted-workspace handling the default** for anything received as files."
+    },
+    {
+      "style": "bullet",
+      "text": "**Put agent config files under code owners.**"
+    },
+    {
+      "style": "bullet",
+      "text": "**Define the audit record,** including process lineage, and run one drill that reconstructs a session from logs."
+    },
+    {
+      "style": "bullet",
+      "text": "**Publish the ownership split** between IT, security and the business."
+    },
+    {
+      "style": "normal",
+      "text": "None of this is new security thinking. It is the same input validation, asset inventory and audit discipline we apply elsewhere, extended to a new kind of worker that happens to be very fast and very literal."
+    },
+    {
+      "style": "normal",
+      "text": "If your teams are adopting coding agents faster than your governance can keep up, the HAZL Solutions team can help you design the registry, workspaces and audit trail to match."
+    }
+  ],
+  "poster": {
+    "headline": "Governing the Agent Workforce:",
+    "subhead": "Repo trust, inventory and audit",
+    "tagline": "A permission prompt is not a permission model.",
+    "sections": [
+      {
+        "title": "Treat repos as untrusted",
+        "text": "Check .git/config, hooks and agent config before an agent opens a folder you received.",
+        "icon": "GitBranch"
+      },
+      {
+        "title": "Keep an agent registry",
+        "text": "Tool, version, identity, startup config and a named owner for every agent you run.",
+        "icon": "ClipboardList"
+      },
+      {
+        "title": "Audit the process tree",
+        "text": "Log requests, tool calls, credentials and spawned processes to a store the agent can't write.",
+        "icon": "ScrollText"
+      },
+      {
+        "title": "Name the owners",
+        "text": "IT runs the registry, security owns policy and response, business owners approve scope.",
+        "icon": "Users"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "Manifold Security: GitSpawn, a single flaw lets untrusted repos run code in Claude Code, Codex, Cursor and Grok (eight findings, seven agents; payload before workspace-trust prompt)",
+      "url": "https://www.manifold.security/blog/ai-coding-agents-git-hijack",
+      "date": "2026-09-01"
+    },
+    {
+      "label": "The Hacker News: Malicious .git configs can make Claude, Codex, Cursor and other AI agents run attacker code (Manifold Security, GitSpawn; no known exploitation)",
+      "url": "https://thehackernews.com/2026/09/malicious-git-configs-can-make-claude.html",
+      "date": "2026-09-02"
+    },
+    {
+      "label": "ServiceNow press release: AI Workflow Factory with AI Control Tower",
+      "url": "https://newsroom.servicenow.com/press-releases/details/2026/ServiceNow-launches-AI-Workflow-Factory-to-turn-workflow-improvement-into-a-continuous-agentic-AI-powered-loop/default.aspx",
+      "date": "2026-10-06"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "quarter": "2022-Q4",
+  "publishedAt": "2022-11-15T15:00:00.000Z",
+  "title": "Sample fixture: how the insights seed pipeline is built",
+  "slug": "sample-fixture-insights-seed-pipeline",
+  "excerpt": "A layout fixture, not an article. Every poster field here sits at its maximum documented length so the renderer can be checked for overflow, contrast and icon weight.",
+  "seoTitle": "Sample fixture for the insights seed pipeline",
+  "seoDescription": "A layout fixture for the HAZL insights seed pipeline: it exercises every poster field at its maximum length so overflow, contrast and icons can be checked.",
+  "tags": ["Tooling", "DevOps", "Design"],
+  "body": [
+    { "style": "normal", "text": "This file is a **fixture**, not an article. It exists so that `build.tsx` can be run end to end without touching any of the real quarterly content, and so that the poster renderer can be inspected with every text field pushed to the limit documented in the README. Nothing here is intended for publication, and the file is skipped unless the builder is run with the `--include-sample` flag." },
+    { "style": "h2", "text": "What the fixture exercises" },
+    { "style": "normal", "text": "The poster is a portrait canvas of 630 by 867 CSS pixels, rendered to a PNG at twice that size. It is divided into a dark title band, four full-width coloured bands and a slim footer strip. Each band has a fixed height, which means the only way text can break the design is by being longer than the band can hold. Rather than letting that happen silently, the builder refuses to render a poster whose content exceeds the limits, and the component itself clamps every text node as a second line of defence." },
+    { "style": "normal", "text": "That belt-and-braces approach matters because the posters are generated once and then imported into a content system, where nobody will be looking at them closely again. A silent overflow would ship. A thrown error will not." },
+    { "style": "h3", "text": "The title band carries the most weight" },
+    { "style": "normal", "text": "List cards on the insights index crop this image to a wide landscape ratio around a hotspot placed near the top, so roughly the top third of the poster has to work as a standalone card. Everything that identifies the article therefore lives in the title band: an eyebrow naming the quarter, a large headline, a supporting subhead, a thin accent divider and a one-line tagline. The four coloured bands below are *supporting detail*, read only by someone who opens the full article." },
+    { "style": "normal", "text": "The practical consequence is a deliberately generous title band and tight limits on the headline and subhead. A headline that wraps to three lines would push the subhead out of the crop, which is precisely the failure the length limits prevent." },
+    { "style": "h2", "text": "Typography and colour" },
+    { "style": "normal", "text": "Titles are set in Montserrat at weights 700 and 800; body text is Inter. Both are pulled from Google Fonts by the headless browser at render time, which is why the renderer is given a virtual time budget rather than being screenshotted immediately. Without that pause the fonts fall back to a system sans-serif and the metrics shift enough to change where lines break." },
+    { "style": "normal", "text": "Each coloured band is a gradient with a flat dark scrim layered over it. The scrim is tuned per band rather than set globally, because the warm orange band needs considerably more help than the indigo one before white text reaches a comfortable contrast ratio. Icons are drawn from the same icon set the site uses, rendered as inline SVG with a white stroke so they read as part of the band rather than as pasted-in artwork." },
+    { "style": "blockquote", "text": "Fixed heights plus loud failures beat flexible layouts you never look at again." },
+    { "style": "h3", "text": "Checks the builder performs" },
+    { "style": "bullet", "text": "Every content field is measured against the README schema, and the first violation stops the build." },
+    { "style": "bullet", "text": "Slugs, titles and quarters must be unique across the whole content directory." },
+    { "style": "bullet", "text": "Publication dates must be real ISO timestamps that fall inside their own quarter." },
+    { "style": "bullet", "text": "Icon names are checked against the icon library's actual exports, not a hand-maintained list." },
+    { "style": "bullet", "text": "Rendered PNGs are measured after the fact to confirm the device scale factor was applied." },
+    { "style": "normal", "text": "Word counts are reported rather than enforced, because a count a little outside the target range is a judgement call for an editor, not a build failure. The builder prints the count for every article and raises a warning when it falls outside the range the README asks for." },
+    { "style": "h2", "text": "Output shape" },
+    { "style": "normal", "text": "The builder writes two kinds of artefact. The first is one PNG per article, named after its quarter. The second is a newline-delimited JSON file holding a single shared author document followed by one document per article, each with a deterministic identifier derived from its quarter so that re-running the build updates existing documents instead of creating duplicates." },
+    { "style": "normal", "text": "Article bodies are converted from the simple styled-text entries used in the content files into the structured block format the content system expects. Inline markers for **strong**, *emphasis* and `code` become decorators on text spans, and markdown-style links such as [the icon library](https://lucide.dev) become annotations carrying the destination and an open-in-new-tab flag. Consecutive bullet entries become list items at a single nesting level." },
+    { "style": "normal", "text": "Cover images are referenced by absolute file path, which lets the import step upload each PNG and attach it to its document in one pass. The hotspot and crop values are written explicitly so that the wide list-card crop lands on the title band rather than being centred on the middle of the poster, where it would catch two coloured bands and no headline." },
+    { "style": "h3", "text": "Running it" },
+    { "style": "normal", "text": "The build is a single command and writes only to its own output directory, which is ignored by version control. It performs no network calls other than the font request made by the browser while rendering, and it deliberately does not import anything: the generated files are left on disk for a human to inspect and then import when they are satisfied with the result." },
+    { "style": "normal", "text": "If a render fails, the error names the content file and the field that caused it. That is the whole point of the fixture: to prove the failure path works before any real content depends on it." }
+  ],
+  "poster": {
+    "headline": "Sample Poster Layout Stress",
+    "subhead": "Checking Every Band At Its Maximum Width",
+    "tagline": "Each field below sits at the maximum length the README allows here.",
+    "sections": [
+      {
+        "title": "Title Band Readability Test",
+        "text": "The headline, subhead and tagline must all survive the wide list-card crop up top.",
+        "icon": "Rocket"
+      },
+      {
+        "title": "Contrast And Scrim Checking",
+        "text": "White text over a vivid gradient needs a tuned dark scrim to stay comfortably legible.",
+        "icon": "ShieldCheck"
+      },
+      {
+        "title": "Icon Weight And Alignment",
+        "text": "Icons alternate side to side, drawn at ninety-two pixels with a thin white stroke.",
+        "icon": "GitBranch"
+      },
+      {
+        "title": "Clamping And Overflow Guard",
+        "text": "Three lines of band text is the ceiling; anything longer fails the build rather than spill.",
+        "icon": "Sparkles"
+      }
+    ]
+  },
+  "sources": [
+    { "label": "Lucide icon library", "url": "https://lucide.dev/icons/", "date": "2022-11-01" }
+  ]
+}

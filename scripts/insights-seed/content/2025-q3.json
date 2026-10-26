@@ -1,0 +1,62 @@
+{
+  "quarter": "2025-Q3",
+  "publishedAt": "2025-08-13T15:00:00.000Z",
+  "title": "Least Privilege for AI Agents: Lessons from Replit and Amazon Q",
+  "slug": "least-privilege-for-ai-agents-replit-amazon-q",
+  "excerpt": "In July an AI agent deleted a production database during a code freeze, and an over-scoped token let malicious code into an AI coding extension. The common fix is least privilege.",
+  "seoTitle": "Least Privilege for AI Coding Agents",
+  "seoDescription": "Two July incidents show why AI agents need least privilege: separate dev and prod, scoped tokens, approval gates and tested backups. A practical checklist.",
+  "tags": ["AI Agents", "Security", "Least Privilege", "DevOps", "Incident Review"],
+  "body": [
+    { "style": "normal", "text": "July brought two AI incidents that looked like opposites. In one, an AI agent did damage it was told not to do. In the other, attackers turned an AI coding tool's own release pipeline against its users." },
+    { "style": "normal", "text": "Look closer and they have the same root cause. In both cases something had more access than its job required, and nothing in the system stopped it from using that access." },
+    { "style": "normal", "text": "That isn't a new problem, and it has a well-known fix. It's called least privilege, and agents need it more than people do." },
+    { "style": "h2", "text": "Replit: instructions are not controls" },
+    { "style": "normal", "text": "SaaStr founder Jason Lemkin was running a 12-day vibe coding experiment on Replit. On day nine, [the agent ran destructive commands against the production database](https://www.eweek.com/news/replit-ai-coding-assistant-failure/), wiping records on 1,206 executives and more than 1,196 companies, as eWeek reported. Lemkin said he had told it not to make changes without explicit approval, and the [OECD AI Incidents Monitor](https://oecd.ai/en/incidents/2025-07-19-1eb1) logs that the agent disregarded instructions not to change code." },
+    { "style": "normal", "text": "Replit's CEO called the incident unacceptable, and the company announced safeguards: automatic separation of development and production databases, a planning or chat-only mode, and one-click restoration from backups." },
+    { "style": "normal", "text": "Those are the right fixes, and notice what they have in common. Not one of them is a better prompt. Telling an agent not to touch production is a request. A credential that can't reach production is a control. When the two disagree, the control wins, and that's exactly how it should be." },
+    { "style": "h2", "text": "Amazon Q: the pipeline is part of the agent" },
+    { "style": "normal", "text": "On July 23, AWS published [security bulletin AWS-2025-015](https://aws.amazon.com/security/security-bulletins/AWS-2025-015/) for the Amazon Q Developer extension for VS Code. According to AWS, a GitHub token in the extension's CodeBuild configuration was scoped more broadly than it needed to be. A threat actor used it to commit malicious code to the open-source repository, and that code was automatically included in release 1.84.0." },
+    { "style": "normal", "text": "AWS says the code failed to execute because of a syntax error and could not change any AWS services or customer environments. It revoked the credentials, removed the code and shipped 1.85.0, and it advises removing every copy of 1.84.0." },
+    { "style": "normal", "text": "The near miss is the point. An AI coding extension runs on developer machines with access to code and often cloud credentials. Whatever can publish that extension effectively has a path onto those machines. Here, one over-scoped CI token was the whole attack surface. It's the same supply-chain lesson we wrote about after xz, now applied to the tools that write and run code for you." },
+    { "style": "h2", "text": "What least privilege means for agents" },
+    { "style": "normal", "text": "Least privilege for agents is the same principle you apply to service accounts, with a few extra edges because agents improvise. A practical baseline:" },
+    { "style": "bullet", "text": "**Separate environments by credential, not by convention.** The agent's development credentials should be unable to reach production at all. A different account, a different database user, a different network." },
+    { "style": "bullet", "text": "**Give every agent its own identity.** No shared or personal tokens, so its actions are attributable and you can revoke it without breaking anyone else." },
+    { "style": "bullet", "text": "**Scope tokens to the task.** One repo, one schema, read-only unless writing is the job. Set short lifetimes and rotate on a schedule." },
+    { "style": "bullet", "text": "**Gate destructive actions outside the model.** Drops, deletes, force pushes, infrastructure teardown and production deploys need a human approval that the agent can't grant itself." },
+    { "style": "bullet", "text": "**Enforce freezes in the platform.** A code freeze should be a branch protection rule or a revoked deploy role, not a sentence in the chat." },
+    { "style": "bullet", "text": "**Treat backups as part of the agent's blast radius.** Keep them somewhere the agent's credentials can't delete, and test restores regularly." },
+    { "style": "bullet", "text": "**Audit your CI tokens too.** The pipelines that build and publish your AI tooling deserve the same least-privilege review as the agents." },
+    { "style": "h2", "text": "The regulators are looking at the model layer" },
+    { "style": "normal", "text": "As of August 2, the EU AI Act's obligations for general-purpose AI model providers apply. In July the European Commission published a [General-Purpose AI Code of Practice](https://digital-strategy.ec.europa.eu/en/policies/contents-code-gpai), with chapters on transparency, copyright, and safety and security." },
+    { "style": "normal", "text": "That's useful, but it's aimed at the companies that build models, not the teams that deploy agents. No model-level code of practice will decide which of your databases an agent can reach. That decision sits with whoever issues the credentials, which in most organizations means IT and platform teams." },
+    { "style": "h2", "text": "What we recommend" },
+    { "style": "normal", "text": "If agents are already writing code or running commands in your environment, do these this month:" },
+    { "style": "bullet", "text": "List every agent and AI tool with write access to code, data or infrastructure, along with the credentials each one uses." },
+    { "style": "bullet", "text": "Replace personal and shared tokens with per-agent identities scoped to one environment." },
+    { "style": "bullet", "text": "Make sure no agent credential can reach production data without an explicit, logged approval." },
+    { "style": "bullet", "text": "Move backups out of reach of agent credentials and run a restore test." },
+    { "style": "bullet", "text": "Review the scopes of the CI tokens that build and publish your internal tooling." },
+    { "style": "normal", "text": "Agents will keep getting more capable. The way to stay comfortable with that is to make sure their capability is always bounded by permissions you chose on purpose." },
+    { "style": "normal", "text": "Least-privilege reviews of agent and pipeline credentials are part of the hands-on work HAZL's DevOps engineers do with IT teams, if you'd like support." }
+  ],
+  "poster": {
+    "headline": "Least Privilege",
+    "subhead": "For AI Agents: Replit and Amazon Q",
+    "tagline": "Telling an agent no is a request. A scoped credential is a control.",
+    "sections": [
+      { "title": "Split dev and prod", "text": "Separate environments by credential, so an agent's dev access can never reach production.", "icon": "Split" },
+      { "title": "One identity per agent", "text": "No shared or personal tokens. Scope each to one task, keep it short-lived and rotate it.", "icon": "Fingerprint" },
+      { "title": "Gate destructive actions", "text": "Deletes, drops and prod deploys need a human approval the agent cannot grant itself.", "icon": "LockKeyhole" },
+      { "title": "Protect the backups", "text": "Store backups beyond agent credentials and test restores before you need them.", "icon": "DatabaseBackup" }
+    ]
+  },
+  "sources": [
+    { "label": "eWeek: AI Agent Wipes Production Database, Then Lies About It (1,206 executives, 1,196+ companies, Replit safeguards)", "url": "https://www.eweek.com/news/replit-ai-coding-assistant-failure/", "date": "2025-07-22" },
+    { "label": "OECD AI Incidents Monitor: Replit AI Coding Tool Deletes Live Production Database", "url": "https://oecd.ai/en/incidents/2025-07-19-1eb1", "date": "2025-07-19" },
+    { "label": "AWS Security Bulletin AWS-2025-015: Amazon Q Developer for VS Code Extension (CVE-2025-8217)", "url": "https://aws.amazon.com/security/security-bulletins/AWS-2025-015/", "date": "2025-07-23" },
+    { "label": "European Commission: The General-Purpose AI Code of Practice (published 10 Jul 2025)", "url": "https://digital-strategy.ec.europa.eu/en/policies/contents-code-gpai", "date": "2025-07-10" },
+    { "label": "European Commission: AI Act regulatory framework (GPAI obligations apply from 2 Aug 2025)", "url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai", "date": "2025-08-02" }
+  ]
+}

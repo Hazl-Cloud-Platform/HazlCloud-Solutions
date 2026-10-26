@@ -864,6 +864,14 @@ html, body {
 }
 .insight-body { font-size: 17px; line-height: 1.75; color: #d1d5db; }
 .insight-paragraph { margin: 18px 0; }
+.insight-list {
+  list-style: disc outside;
+  padding-left: 1.4em;
+  margin: 18px 0;
+}
+.insight-list--number { list-style: decimal outside; }
+.insight-list-item { margin: 8px 0; }
+.insight-list-item::marker { color: inherit; }
 .insight-quote {
   border-left: 2px solid rgba(255,255,255,0.3);
   padding: 4px 0 4px 18px;

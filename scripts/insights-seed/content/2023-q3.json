@@ -1,0 +1,67 @@
+{
+  "quarter": "2023-Q3",
+  "publishedAt": "2023-08-16T15:00:00.000Z",
+  "title": "LLM Apps Are Still Apps: Bringing Prompt Injection into Your SDLC",
+  "slug": "llm-apps-are-still-apps-prompt-injection-sdlc",
+  "excerpt": "Open models make self-hosting realistic and the OWASP LLM Top 10 gives you a checklist. Threat-model LLM features like any other system, and put evals in CI.",
+  "seoTitle": "Prompt Injection Belongs in Your SDLC",
+  "seoDescription": "LLM features need the same discipline as any app. Threat-model them with the OWASP Top 10 for LLM Applications, scope permissions and run evals in CI.",
+  "tags": ["AI", "Security", "SDLC", "CI/CD"],
+  "body": [
+    { "style": "normal", "text": "Six months ago, most teams' AI questions were about developers using chat assistants. Now a growing number are building products on top of large language models: support assistants, internal search over documentation, summarizers wired into ticket queues. The prototypes came together in an afternoon. The production questions are taking longer." },
+    { "style": "normal", "text": "Two things changed this summer. On July 18, Meta released [Llama 2](https://ai.meta.com/blog/llama-2/), free for research and commercial use, with Microsoft as a preferred partner and availability through Azure. Running a capable model yourself is now a realistic option, which means more of the stack is yours to operate and secure. And in early August, OWASP published version 1.0 of its Top 10 for Large Language Model Applications." },
+    { "style": "normal", "text": "The message from both is the same: an LLM application is an application. It has inputs, outputs, dependencies, permissions and failure modes. It belongs in your software development lifecycle like everything else." },
+
+    { "style": "h2", "text": "Prompt injection is untrusted input in a new shape" },
+    { "style": "normal", "text": "The [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) ranks prompt injection first. In a direct injection, a user crafts input that overrides the system prompt. In an indirect injection, hostile instructions arrive through content the model reads: a web page, an email, a document in your retrieval index." },
+    { "style": "normal", "text": "If that sounds like SQL injection, it should, with one uncomfortable difference: there's no equivalent of a parameterized query. Instructions and data travel in the same channel, as natural language. You can reduce the risk. You can't reliably eliminate it with input filtering alone." },
+    { "style": "normal", "text": "That shifts the design question from how to stop every malicious prompt to what the worst outcome is when one gets through. Answer that honestly and your architecture decisions get much clearer." },
+
+    { "style": "h2", "text": "Threat-model the whole system, not just the model" },
+    { "style": "normal", "text": "Several items on the OWASP list are familiar risks in new clothes. Insecure output handling (LLM02) is what happens when model output is passed to a shell, a browser or a database without validation. Supply chain vulnerabilities (LLM05) cover the models, datasets and plugins you pull in. Sensitive information disclosure (LLM06) is your data leaking through responses. Excessive agency (LLM08) is giving a model more permissions or autonomy than its job needs." },
+    { "style": "normal", "text": "A useful threat-modelling session for an LLM feature walks the data flow and asks:" },
+    { "style": "bullet", "text": "What untrusted content can reach the prompt, directly or through retrieval?" },
+    { "style": "bullet", "text": "Where does model output go next, and is it treated as untrusted input there?" },
+    { "style": "bullet", "text": "Which tools, APIs or credentials can the application invoke on the model's behalf, and are they scoped to the minimum?" },
+    { "style": "bullet", "text": "What sensitive data sits in the context window or the retrieval index, and who is allowed to see it?" },
+    { "style": "bullet", "text": "Which model, weights and libraries do we depend on, where did they come from, and who updates them?" },
+    { "style": "bullet", "text": "Which actions need a human to confirm them before they happen?" },
+    { "style": "normal", "text": "If you're self-hosting an open model, add the operational questions: where the weights are stored and how they're verified, how the inference endpoint is authenticated, how it gets patched, and how you'll handle abusive traffic that drives up GPU load. OWASP lists model denial of service as LLM04 for a reason." },
+
+    { "style": "h2", "text": "Put evals in CI, next to your tests" },
+    { "style": "normal", "text": "Traditional tests check that a function returns the right value. LLM features are probabilistic, and their behaviour shifts when you change a prompt, a model version, a retrieval setting or a temperature. Without automated checks, every one of those changes is an untested deploy." },
+    { "style": "normal", "text": "Treat evaluations as part of the build:" },
+    { "style": "bullet", "text": "**A versioned eval set.** Representative inputs with the expected properties of a good answer, stored in the repo alongside the prompt templates." },
+    { "style": "bullet", "text": "**Adversarial cases.** Known injection attempts, both typed directly and embedded in documents, with assertions that the application refuses or contains them." },
+    { "style": "bullet", "text": "**Output contract checks.** If the model must return JSON, validate the schema. If it must never emit a URL or a SQL statement, test for that." },
+    { "style": "bullet", "text": "**Pinned model versions.** Treat a model or prompt change like a dependency upgrade: in a pull request, with eval results attached." },
+    { "style": "bullet", "text": "**Thresholds that block merges.** A drop in pass rate on the eval set should fail the pipeline, just as a failing unit test would." },
+    { "style": "bullet", "text": "**Production logging with redaction.** Capture prompts and responses, minus sensitive fields, so you can find failures and turn them into new eval cases." },
+
+    { "style": "h2", "text": "Adoption is outrunning process" },
+    { "style": "normal", "text": "Developers aren't waiting for governance. In the [Stack Overflow 2023 Developer Survey](https://survey.stackoverflow.co/2023/), 70% of all respondents said they are using or planning to use AI tools in their development process this year. On July 20, GitHub opened the [Copilot Chat beta](https://github.blog/2023-07-20-github-copilot-chat-beta-now-available-for-every-organization/) to all Copilot for Business users in Visual Studio and VS Code. The tooling is arriving everywhere at once. The guardrails mostly aren't yet." },
+
+    { "style": "h2", "text": "What we recommend" },
+    { "style": "normal", "text": "Don't invent a separate, special process for AI features. Extend the one you have. Add LLM-specific questions to your threat-modelling template, using the OWASP list as the checklist. Treat model output as untrusted input everywhere it flows. Give the application the narrowest permissions that let it do its job, and require human confirmation for anything destructive or irreversible. Put evals in CI so prompt and model changes are reviewed like code." },
+    { "style": "normal", "text": "If you're self-hosting Llama 2 or another open model, plan for it the way you would any stateful production service: authentication, patching, capacity, monitoring and a named owner." },
+    { "style": "normal", "text": "If your team is moving an LLM feature from prototype to production and wants help with the pipeline around it, talk to us." }
+  ],
+  "poster": {
+    "headline": "LLM Apps Are Still Apps",
+    "subhead": "Prompt injection meets your SDLC",
+    "tagline": "Treat model output as untrusted input, and test prompts like code.",
+    "sections": [
+      { "title": "Threat-model the flow", "text": "Trace untrusted content into the prompt and model output into every downstream system.", "icon": "ScanSearch" },
+      { "title": "Distrust the output", "text": "Validate model output before it reaches a shell, a browser or a database.", "icon": "ShieldAlert" },
+      { "title": "Narrow the permissions", "text": "Scope tools and credentials to the job, and require a human for anything irreversible.", "icon": "KeyRound" },
+      { "title": "Evals in CI", "text": "Versioned eval sets and injection tests block merges when prompts or models regress.", "icon": "FlaskConical" }
+    ]
+  },
+  "sources": [
+    { "label": "OWASP Top 10 for Large Language Model Applications (LLM01 Prompt Injection through LLM10)", "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/", "date": "2023-08-02" },
+    { "label": "SD Times: OWASP releases Top 10 list for LLMs (version 1.0)", "url": "https://sdtimes.com/security/owasp-releases-top-10-list-for-llms/", "date": "2023-08-02" },
+    { "label": "Meta AI: Meta and Microsoft introduce Llama 2 (free for research and commercial use)", "url": "https://ai.meta.com/blog/llama-2/", "date": "2023-07-18" },
+    { "label": "Stack Overflow 2023 Developer Survey (70% of all respondents using or planning to use AI tools)", "url": "https://survey.stackoverflow.co/2023/", "date": "2023-06-13" },
+    { "label": "GitHub Blog: GitHub Copilot Chat beta now available for all businesses", "url": "https://github.blog/2023-07-20-github-copilot-chat-beta-now-available-for-every-organization/", "date": "2023-07-20" }
+  ]
+}

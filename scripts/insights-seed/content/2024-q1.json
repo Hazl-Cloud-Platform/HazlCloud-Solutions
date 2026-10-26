@@ -1,0 +1,181 @@
+{
+  "quarter": "2024-Q1",
+  "publishedAt": "2024-02-21T15:00:00.000Z",
+  "title": "AI Code Debt Is Real: Measure the Churn, Own the Output",
+  "slug": "ai-code-debt-measure-the-churn-own-the-output",
+  "excerpt": "New data points to rising churn and copy-paste in AI-assisted codebases, and a tribunal just ruled a company owns what its chatbot says. Here is how to measure the debt and assign ownership.",
+  "seoTitle": "AI Code Debt: Measure Churn, Own Output",
+  "seoDescription": "AI assistants are now the default way code gets written. Learn how to measure churn and duplication in your repos and make ownership of AI output explicit.",
+  "tags": [
+    "AI",
+    "Code Quality",
+    "Engineering Metrics",
+    "DevOps"
+  ],
+  "body": [
+    {
+      "style": "normal",
+      "text": "At the end of December, GitHub made [Copilot Chat generally available](https://github.blog/2023-12-29-github-copilot-chat-now-generally-available-for-organizations-and-individuals/) to every Copilot subscriber, powered by GPT-4 and built into VS Code and Visual Studio. For many teams, that quietly moved AI assistance from a pilot to the normal way code gets written."
+    },
+    {
+      "style": "normal",
+      "text": "The interesting question now is not whether developers type faster. It is what the codebase looks like a year from now, and who answers for it when something an assistant wrote turns out to be wrong."
+    },
+    {
+      "style": "normal",
+      "text": "Two things published in the last few weeks give useful, if uncomfortable, answers to both."
+    },
+    {
+      "style": "h2",
+      "text": "What the churn data is telling us"
+    },
+    {
+      "style": "normal",
+      "text": "GitClear's [Coding on Copilot](https://www.gitclear.com/coding_on_copilot_data_shows_ais_downward_pressure_on_code_quality) analysis looked at roughly 153 million changed lines authored between January 2020 and December 2023. Its headline finding: **code churn**, meaning lines reverted or updated less than two weeks after they were written, is projected to double in 2024 compared with the 2021 pre-AI baseline."
+    },
+    {
+      "style": "normal",
+      "text": "The same analysis found that the share of added and copy/pasted code is rising relative to code that is updated, deleted or moved. That pattern matters. Moved code is what refactoring looks like in a diff. Copy/paste is what avoiding a refactor looks like."
+    },
+    {
+      "style": "normal",
+      "text": "It is fair to treat this with some caution. It is one company's dataset, the trend is correlated with AI adoption rather than proven to be caused by it, and your repositories may look nothing like the sample. But the mechanism is plausible: an assistant makes adding code nearly free, and nothing in the tool makes consolidating it any cheaper. If you are not measuring these trends in your own codebase, you simply do not know which side of the line you are on."
+    },
+    {
+      "style": "h2",
+      "text": "You own what your tools say"
+    },
+    {
+      "style": "normal",
+      "text": "On February 14, British Columbia's Civil Resolution Tribunal decided *Moffatt v. Air Canada*. The airline's website chatbot told a customer he could apply for a bereavement fare retroactively. The airline's actual policy did not allow that. Air Canada argued it [could not be held liable](https://foxbusiness.com/lifestyle/air-canada-chatbot-gave-customer-wrong-info-airline-pay) for information provided by its agents, servants or representatives, including a chatbot. The tribunal disagreed, found the airline did not take reasonable care to ensure its chatbot was accurate, and ordered it to pay about $812 CAD in damages, interest and fees."
+    },
+    {
+      "style": "normal",
+      "text": "The dollar figure is small. The principle is not. This was a customer-service bot rather than a code assistant, but the logic transfers directly to engineering: output produced by a tool you chose to deploy is your output. \"The assistant suggested it\" will not hold up in a postmortem, a security audit or a contract dispute any better than \"the chatbot said it\" held up in front of the tribunal."
+    },
+    {
+      "style": "h2",
+      "text": "Measure outcomes, not adoption"
+    },
+    {
+      "style": "normal",
+      "text": "Most AI rollouts are tracked with the vendor's numbers: seats assigned, suggestions accepted, lines completed. Those tell you the tool is being used. They tell you nothing about whether the codebase is getting healthier. The good news is that your git history already holds a pre-AI baseline, so you can start comparing today."
+    },
+    {
+      "style": "normal",
+      "text": "A practical starter set of metrics:"
+    },
+    {
+      "style": "bullet",
+      "text": "**Short-term churn:** the share of lines changed or reverted within 14 days of merge, per repository, trended monthly."
+    },
+    {
+      "style": "bullet",
+      "text": "**Duplication:** duplicated blocks reported by your static analysis tool, compared against the same period last year."
+    },
+    {
+      "style": "bullet",
+      "text": "**Change failure rate:** failed deployments and rollbacks, split between teams with heavy assistant use and those without."
+    },
+    {
+      "style": "bullet",
+      "text": "**Review load:** pull request size against time-to-approve. Bigger diffs approved in the same time means less review per line."
+    },
+    {
+      "style": "bullet",
+      "text": "**Escaped defects:** production bugs traced back to the pull request that introduced them."
+    },
+    {
+      "style": "normal",
+      "text": "None of these needs a new platform. A scheduled job over `git log`, your existing linter and your incident tracker will get you most of the way."
+    },
+    {
+      "style": "h2",
+      "text": "Make ownership explicit"
+    },
+    {
+      "style": "normal",
+      "text": "Measurement shows you the debt. Ownership rules stop it compounding. These belong in your contributing guide and pull request template, not in a slide deck:"
+    },
+    {
+      "style": "bullet",
+      "text": "**Author of record:** whoever opens the pull request owns every line in it, whatever generated it."
+    },
+    {
+      "style": "bullet",
+      "text": "**Reviewable diffs:** set a soft size limit and ask for large generated changes to be split."
+    },
+    {
+      "style": "bullet",
+      "text": "**Reuse before you add:** reviewers ask whether an existing helper already does this, and flag near-duplicates."
+    },
+    {
+      "style": "bullet",
+      "text": "**Tests travel with the code:** generated logic without tests is a draft, not a change."
+    },
+    {
+      "style": "bullet",
+      "text": "**Customer-facing AI has an owner:** a named person, a test suite checked against the real policy, and a way to correct answers quickly. A disclaimer is not a control."
+    },
+    {
+      "style": "h2",
+      "text": "What we recommend"
+    },
+    {
+      "style": "normal",
+      "text": "Start small and start this quarter. Pull a churn and duplication baseline from the two years before your AI rollout and put the trend on the same dashboard as your delivery metrics. Write down the ownership rules above and make them part of review. Then budget refactoring time explicitly, because an assistant that makes adding code cheaper will not volunteer to clean it up."
+    },
+    {
+      "style": "normal",
+      "text": "If the numbers look fine, you have evidence your rollout is working. If they do not, you found out from a dashboard rather than an outage."
+    },
+    {
+      "style": "normal",
+      "text": "If you would like help wiring these measurements into your pipeline, it is the kind of work the HAZL Solutions team does every day."
+    }
+  ],
+  "poster": {
+    "headline": "AI Code Debt Is Real:",
+    "subhead": "Measure the Churn, Own the Output",
+    "tagline": "Assistants make code cheap to add. Nobody makes it cheap to own.",
+    "sections": [
+      {
+        "title": "Churn Is Climbing",
+        "text": "GitClear projects code churn doubling in 2024 versus the 2021 pre-AI baseline.",
+        "icon": "Activity"
+      },
+      {
+        "title": "You Own the Output",
+        "text": "Moffatt v. Air Canada: a company is responsible for what its chatbot tells customers.",
+        "icon": "Scale"
+      },
+      {
+        "title": "Measure Outcomes",
+        "text": "Track churn, duplication, change failure rate and review load, not seats or acceptances.",
+        "icon": "Gauge"
+      },
+      {
+        "title": "Write Down Ownership",
+        "text": "PR author owns every line. Small diffs, reuse first, and tests travel with the code.",
+        "icon": "UserCheck"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "GitClear: Coding on Copilot – AI's downward pressure on code quality",
+      "url": "https://www.gitclear.com/coding_on_copilot_data_shows_ais_downward_pressure_on_code_quality",
+      "date": "2024-01-16"
+    },
+    {
+      "label": "Fox Business: Air Canada chatbot gave customer wrong info, airline has to pay (Moffatt v. Air Canada, 2024 BCCRT 149)",
+      "url": "https://foxbusiness.com/lifestyle/air-canada-chatbot-gave-customer-wrong-info-airline-pay",
+      "date": "2024-02-19"
+    },
+    {
+      "label": "GitHub Blog: Copilot Chat now generally available",
+      "url": "https://github.blog/2023-12-29-github-copilot-chat-now-generally-available-for-organizations-and-individuals/",
+      "date": "2023-12-29"
+    }
+  ]
+}

@@ -77,6 +77,14 @@ const portableComponents: PortableTextComponents = {
     ),
     normal: ({ children }) => <p className="insight-paragraph">{children}</p>,
   },
+  list: {
+    bullet: ({ children }) => <ul className="insight-list">{children}</ul>,
+    number: ({ children }) => <ol className="insight-list insight-list--number">{children}</ol>,
+  },
+  listItem: {
+    bullet: ({ children }) => <li className="insight-list-item">{children}</li>,
+    number: ({ children }) => <li className="insight-list-item">{children}</li>,
+  },
   marks: {
     code: ({ children }) => <code className="insight-inline-code">{children}</code>,
     link: ({ children, value }) => (
@@ -134,7 +142,10 @@ export default async function InsightArticlePage({ params }: { params: { slug: s
     datePublished: post.publishedAt,
     dateModified: post._updatedAt,
     author: post.author?.name
-      ? { '@type': 'Person', name: post.author.name }
+      ? {
+          '@type': /team\s*$/i.test(post.author.name) ? 'Organization' : 'Person',
+          name: post.author.name,
+        }
       : { '@type': 'Organization', name: 'HAZL Solutions' },
     publisher: {
       '@type': 'Organization',

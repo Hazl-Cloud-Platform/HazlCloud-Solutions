@@ -1,0 +1,182 @@
+{
+  "quarter": "2024-Q2",
+  "publishedAt": "2024-05-15T15:00:00.000Z",
+  "title": "After xz: Supply-Chain Trust When Code, Models and Contributors Are Unknown",
+  "slug": "after-xz-supply-chain-trust-code-models-contributors",
+  "excerpt": "The xz backdoor hid in a release tarball, malicious models hid in pickle files, and AI agents are starting to open pull requests. One supply-chain checklist covers all three.",
+  "seoTitle": "After xz: Supply-Chain Trust for Code and AI",
+  "seoDescription": "The xz backdoor, malicious Hugging Face models and new coding agents all widen your supply chain. A checklist for pinning, SBOMs, provenance and isolation.",
+  "tags": [
+    "Supply Chain",
+    "Security",
+    "AI",
+    "DevOps"
+  ],
+  "body": [
+    {
+      "style": "normal",
+      "text": "On March 29, Andres Freund [posted to the oss-security list](https://www.openwall.com/lists/oss-security/2024/03/29/4) that the upstream xz repository and its release tarballs had been backdoored, in versions 5.6.0 and 5.6.1. He found it because SSH logins on his Debian sid machines were using unusual amounts of CPU and valgrind was reporting errors. A failed login that used to take about 0.3 seconds was taking about 0.8."
+    },
+    {
+      "style": "normal",
+      "text": "Half a second of latency is what stood between a compression library and a backdoor in sshd. The affected versions had not yet been widely adopted by distributions. That was luck, not process."
+    },
+    {
+      "style": "normal",
+      "text": "Seven weeks on, the lesson for operators is broader than one library. The number of things we pull into production without really knowing who made them is growing fast, and xz is the clearest picture yet of how that goes wrong."
+    },
+    {
+      "style": "h2",
+      "text": "What xz actually exploited"
+    },
+    {
+      "style": "normal",
+      "text": "The details are worth reading in full, because each one defeats a control many teams rely on:"
+    },
+    {
+      "style": "bullet",
+      "text": "**The tarball was not the repository.** The malicious build step lived in `build-to-host.m4` in the release tarballs, not in the upstream git source. Anyone who reviewed the repo and built from the tarball reviewed the wrong thing."
+    },
+    {
+      "style": "bullet",
+      "text": "**The payload hid in test files.** Obfuscated data was committed under `tests/files/`, where binary blobs look normal."
+    },
+    {
+      "style": "bullet",
+      "text": "**It only fired in specific builds.** The injection targeted x86-64 Linux builds using gcc and GNU ld, packaged as Debian or RPM, which made it harder to spot anywhere else."
+    },
+    {
+      "style": "bullet",
+      "text": "**It came through the project's own release process.** A checksum only proves you received what the project published, and here the project's own release was the problem."
+    },
+    {
+      "style": "normal",
+      "text": "Pinning a version would not have helped you if you pinned 5.6.1. Knowing *where* that version was running, quickly, would have."
+    },
+    {
+      "style": "h2",
+      "text": "Models are code you execute"
+    },
+    {
+      "style": "normal",
+      "text": "In late February, JFrog reported [around 100 malicious models](https://jfrog.com/blog/data-scientists-targeted-by-malicious-hugging-face-ml-models-with-silent-backdoor/) on Hugging Face. One used Python's pickle `__reduce__` mechanism inside a PyTorch model file, so simply calling `torch.load()` opened a reverse shell to a remote IP. No inference needed. Loading the file was enough."
+    },
+    {
+      "style": "normal",
+      "text": "Many teams still treat model weights as data: download from a public hub, cache in a bucket, load in a notebook with production credentials nearby. A pickle-based model is an executable. It deserves the same intake process as any other third-party binary."
+    },
+    {
+      "style": "h2",
+      "text": "Agents are new contributors"
+    },
+    {
+      "style": "normal",
+      "text": "In March, Cognition introduced [Devin](https://cognition.com/blog/introducing-devin), reporting that it resolved 13.86% of issues end-to-end on a random 25% subset of SWE-bench, against a previous state of the art of 1.96%. At the end of April, GitHub opened a technical preview of [Copilot Workspace](https://github.blog/2024-04-29-github-copilot-workspace/), which takes an issue, proposes a plan, generates the code changes and lets you run tests in a Codespace before you open a pull request."
+    },
+    {
+      "style": "normal",
+      "text": "Both are early, and both point the same way: more changes arriving from a contributor you did not hire, cannot interview and whose context you cannot fully see. That is not a reason to avoid them. It is a reason to make sure your pipeline does not assume every commit came from a trusted human who understood the code."
+    },
+    {
+      "style": "h2",
+      "text": "One checklist for code, models and agents"
+    },
+    {
+      "style": "normal",
+      "text": "The same few controls cover all three sources of risk:"
+    },
+    {
+      "style": "bullet",
+      "text": "**Build from what you reviewed.** Build dependencies you vendor from tagged source where you can, or diff release tarballs against the tagged commit."
+    },
+    {
+      "style": "bullet",
+      "text": "**Pin by hash, not by name.** Lockfiles with integrity hashes, container images by digest, and models by commit revision rather than `main`."
+    },
+    {
+      "style": "bullet",
+      "text": "**Keep an SBOM per artifact.** Generate it in CI and store it with the release, so \"where are we running xz 5.6.x?\" takes minutes, not days."
+    },
+    {
+      "style": "bullet",
+      "text": "**Record provenance.** Sign build outputs and keep attestations of what source and builder produced them."
+    },
+    {
+      "style": "bullet",
+      "text": "**Gate model intake.** Prefer safetensors, scan pickle files before use, and load anything untrusted in a sandbox with no credentials and no outbound network."
+    },
+    {
+      "style": "bullet",
+      "text": "**Limit build egress.** A reverse shell needs a way out. CI runners and training jobs should only reach the registries they need."
+    },
+    {
+      "style": "bullet",
+      "text": "**Treat agent output as untrusted input.** Label agent-authored pull requests, keep the same branch protections and required reviews, and never give the agent's environment production secrets or merge rights."
+    },
+    {
+      "style": "h2",
+      "text": "What we recommend"
+    },
+    {
+      "style": "normal",
+      "text": "Pick one production service this month and run a tabletop: a critical dependency was backdoored yesterday. How long does it take to find every place it runs, rebuild without it and prove the new artifact is clean? The gaps you find are your roadmap."
+    },
+    {
+      "style": "normal",
+      "text": "Then put models and agent output on the same intake path as packages. One process is easier to audit than three."
+    },
+    {
+      "style": "normal",
+      "text": "If you would like a hand building that pipeline, the HAZL Solutions team works on exactly this kind of supply-chain plumbing."
+    }
+  ],
+  "poster": {
+    "headline": "After xz:",
+    "subhead": "Trust Nothing You Didn't Build",
+    "tagline": "Code, models and agents now share one supply chain. Secure it once.",
+    "sections": [
+      {
+        "title": "Tarball Is Not the Repo",
+        "text": "xz's backdoor lived in release tarballs, not git. Build from what you actually reviewed.",
+        "icon": "GitCompare"
+      },
+      {
+        "title": "Models Execute Code",
+        "text": "JFrog found ~100 malicious Hugging Face models. A pickle load can open a reverse shell.",
+        "icon": "ScanSearch"
+      },
+      {
+        "title": "Agents Open PRs Now",
+        "text": "Devin and Copilot Workspace mean more changes from contributors you never interviewed.",
+        "icon": "Bot"
+      },
+      {
+        "title": "Pin, SBOM, Attest",
+        "text": "Pin by hash, keep an SBOM per artifact, sign builds and limit egress from runners.",
+        "icon": "PackageCheck"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "label": "oss-security: backdoor in upstream xz/liblzma (Andres Freund)",
+      "url": "https://www.openwall.com/lists/oss-security/2024/03/29/4",
+      "date": "2024-03-29"
+    },
+    {
+      "label": "JFrog: Data scientists targeted by malicious Hugging Face ML models with silent backdoor",
+      "url": "https://jfrog.com/blog/data-scientists-targeted-by-malicious-hugging-face-ml-models-with-silent-backdoor/",
+      "date": "2024-02-27"
+    },
+    {
+      "label": "Cognition: Introducing Devin",
+      "url": "https://cognition.com/blog/introducing-devin",
+      "date": "2024-03-12"
+    },
+    {
+      "label": "GitHub Blog: GitHub Copilot Workspace",
+      "url": "https://github.blog/2024-04-29-github-copilot-workspace/",
+      "date": "2024-04-29"
+    }
+  ]
+}

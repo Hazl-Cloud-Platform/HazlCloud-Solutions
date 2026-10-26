@@ -1,0 +1,66 @@
+{
+  "quarter": "2023-Q4",
+  "publishedAt": "2023-11-17T23:00:00.000Z",
+  "title": "Your AI Vendor Is a Single Point of Failure. Plan for It.",
+  "slug": "your-ai-vendor-is-a-single-point-of-failure",
+  "excerpt": "One month brought a major platform launch, DDoS-driven outages and a sudden leadership change at OpenAI. Here's how to architect AI features so a vendor's bad week isn't yours.",
+  "seoTitle": "Your AI Vendor Is a Single Point of Failure",
+  "seoDescription": "Outages, model changes and vendor turmoil are all AI dependency risks. Build a model gateway, fallbacks, degraded modes and an exit plan before you need them.",
+  "tags": ["AI", "Reliability", "Architecture", "Vendor Risk"],
+  "body": [
+    { "style": "normal", "text": "This month, OpenAI's first developer conference handed teams a long list of reasons to build more on its platform. Within days, the same platform reminded everyone what it means to depend on a single provider." },
+    { "style": "normal", "text": "At [DevDay on November 6](https://openai.com/blog/new-models-and-developer-products-announced-at-devday), OpenAI announced GPT-4 Turbo with a 128K context window, priced 3x cheaper for input tokens and 2x cheaper for output tokens than GPT-4, alongside a new Assistants API in beta and custom versions of ChatGPT called GPTs. Two days later, ChatGPT and the API went down in a major outage, and OpenAI [confirmed](https://www.bleepingcomputer.com/news/security/openai-confirms-ddos-attacks-behind-ongoing-chatgpt-outages/) it was dealing with periodic outages caused by an abnormal traffic pattern reflective of a DDoS attack. Then on November 17, the board [announced](https://openai.com/blog/openai-announces-leadership-transition) that Sam Altman would depart as CEO, with CTO Mira Murati named interim CEO effective immediately." },
+    { "style": "normal", "text": "None of this is a reason to stop using hosted models. It's a reason to architect for them the way you would any critical external dependency: assume it will be slow, down, changed or repriced at an inconvenient moment." },
+
+    { "style": "h2", "text": "Three kinds of vendor risk" },
+    { "style": "normal", "text": "It helps to separate the failure modes, because each one needs a different control." },
+    { "style": "bullet", "text": "**Availability risk.** The API is down, rate-limited or degraded. Your feature either degrades gracefully or takes your product down with it." },
+    { "style": "bullet", "text": "**Change risk.** Models are versioned, updated and retired, and new versions behave differently on the same prompts. Pricing moves too. A change you didn't schedule can still break your output contract." },
+    { "style": "bullet", "text": "**Business and governance risk.** Leadership, strategy, terms of service and regional availability can shift quickly. You can't control any of it, but you can control how hard it is to move." },
+    { "style": "normal", "text": "Many teams that wired a model directly into their application this year have planned for none of these. The model call is an HTTP request scattered across the codebase, with the vendor's SDK, API key and prompt format hard-coded at every call site." },
+
+    { "style": "h2", "text": "Put a gateway between your code and the model" },
+    { "style": "normal", "text": "The single most useful structural change is an internal model gateway: one service or library that every feature goes through to reach a model. It doesn't need to be elaborate. It needs to own the things that should never be duplicated:" },
+    { "style": "bullet", "text": "**One interface, many providers.** Application code asks for a capability such as summarize, classify or chat, and the gateway maps it to a provider and model version." },
+    { "style": "bullet", "text": "**Timeouts, retries and circuit breakers.** Fail fast when the provider is struggling instead of piling up requests." },
+    { "style": "bullet", "text": "**Fallback routing.** A secondary provider, a smaller self-hosted model, or a cached or non-AI response when the primary is unavailable." },
+    { "style": "bullet", "text": "**Pinned model versions.** Upgrades happen deliberately, behind a flag, after evals have run." },
+    { "style": "bullet", "text": "**Central credentials and quotas.** Keys live in your secrets manager, scoped per environment, with per-feature budgets and rate limits." },
+    { "style": "bullet", "text": "**Observability.** Latency, error rates, token usage and cost per feature, with alerts, so you hear about degradation before your customers tell you." },
+    { "style": "normal", "text": "A gateway also makes fallbacks testable. If switching providers is a configuration change, you can exercise it in staging on a schedule, rather than discovering mid-outage that the secondary path never worked." },
+
+    { "style": "h2", "text": "Design for degraded mode" },
+    { "style": "normal", "text": "Fallbacks aren't only about swapping models. Ask what each AI feature should do when no model is available at all. A support assistant can hand off to a human queue. A summarizer can show the original text. A classification step can route to a default bucket for later review. Write these behaviours down, build them, and test them by switching the model off in a non-production environment." },
+    { "style": "normal", "text": "Keep your prompts, eval sets and output contracts in your own repository, in as provider-neutral a form as you can. They're the real asset. If they live only inside one vendor's hosted features, moving becomes a rebuild rather than a reconfiguration. Weigh that carefully before building on any vendor-specific layer, including the newly announced hosted assistants and GPTs." },
+
+    { "style": "h2", "text": "Governance is catching up" },
+    { "style": "normal", "text": "Canada's [Voluntary Code of Conduct on the Responsible Development and Management of Advanced Generative AI Systems](https://ised-isde.canada.ca/site/ised/en/voluntary-code-conduct-responsible-development-and-management-advanced-generative-ai-systems), published in September, distinguishes between developers who build these systems and managers who operate them, and sets out outcomes including accountability, safety, human oversight and monitoring, and validity and robustness. If you run a generative AI feature in production, you're closer to a manager than you might think. Knowing your dependencies, and how you'll respond when one fails, is part of operating responsibly." },
+
+    { "style": "h2", "text": "What we recommend" },
+    { "style": "normal", "text": "However this week's leadership news plays out, do a short dependency review of every AI feature you run before the next outage:" },
+    { "style": "bullet", "text": "List each feature, the provider and model version it uses, and who owns it." },
+    { "style": "bullet", "text": "Decide its degraded-mode behaviour and confirm that it's implemented." },
+    { "style": "bullet", "text": "Route all model calls through one gateway with timeouts, fallbacks and monitoring." },
+    { "style": "bullet", "text": "Pin model versions and gate upgrades on eval results." },
+    { "style": "bullet", "text": "Write a one-page exit plan: what it would take to move each feature to another provider, and how long it would take." },
+    { "style": "normal", "text": "A hosted model is a dependency like a payment processor or a cloud region. Treat it with the same discipline, and a bad week for your vendor stays a bad week for your vendor." },
+    { "style": "normal", "text": "If you want help designing a model gateway or a fallback strategy that holds up under real outages, talk to us." }
+  ],
+  "poster": {
+    "headline": "One Vendor, One Failure",
+    "subhead": "Designing for AI provider outages",
+    "tagline": "Assume the model will be down, changed or repriced at a bad moment.",
+    "sections": [
+      { "title": "Build a model gateway", "text": "One interface for every feature, with timeouts, quotas, central keys and observability.", "icon": "Network" },
+      { "title": "Route around failure", "text": "Fall back to a second provider, a smaller self-hosted model or a cached response.", "icon": "Shuffle" },
+      { "title": "Design degraded mode", "text": "Decide what each AI feature does with no model at all, then test it on a schedule.", "icon": "Gauge" },
+      { "title": "Write the exit plan", "text": "Keep prompts and evals in your repo, and know what moving providers would take.", "icon": "DoorOpen" }
+    ]
+  },
+  "sources": [
+    { "label": "OpenAI: New models and developer products announced at DevDay (GPT-4 Turbo 128K; 3x/2x cheaper; Assistants API beta)", "url": "https://openai.com/blog/new-models-and-developer-products-announced-at-devday", "date": "2023-11-06" },
+    { "label": "BleepingComputer: OpenAI confirms DDoS attacks behind ongoing ChatGPT outages", "url": "https://www.bleepingcomputer.com/news/security/openai-confirms-ddos-attacks-behind-ongoing-chatgpt-outages/", "date": "2023-11-09" },
+    { "label": "OpenAI: OpenAI announces leadership transition", "url": "https://openai.com/blog/openai-announces-leadership-transition", "date": "2023-11-17" },
+    { "label": "ISED Canada: Voluntary Code of Conduct on the Responsible Development and Management of Advanced Generative AI Systems", "url": "https://ised-isde.canada.ca/site/ised/en/voluntary-code-conduct-responsible-development-and-management-advanced-generative-ai-systems", "date": "2023-09-27" }
+  ]
+}
