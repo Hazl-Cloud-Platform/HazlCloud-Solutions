@@ -570,7 +570,7 @@ function main(): void {
         _type: 'image',
         _sanityAsset: `image@file://${pngPath}`,
         alt: `Infographic: ${a.title.replace(/\s+/g, ' ').trim()}`,
-        hotspot: { _type: 'sanity.imageHotspot', x: 0.5, y: 0.2, height: 0.4, width: 1 },
+        hotspot: { _type: 'sanity.imageHotspot', x: 0.5, y: 0.55, height: 0.38, width: 1 },
         crop: { _type: 'sanity.imageCrop', top: 0, bottom: 0, left: 0, right: 0 },
       },
       body: toPortableText(a.body, a.quarter),
